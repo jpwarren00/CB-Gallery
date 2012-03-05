@@ -79,4 +79,5 @@ function cb_gallery_install(){
 function cb_gallery_uninstall(){
   drupal_uninstall_schema('cb_gallery');
 }
+//end of file
 ?>
