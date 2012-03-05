@@ -1,0 +1,82 @@
+<?php
+
+function cb_gallery_schema() {
+  $schema = array();
+  // Gallery Names
+  $schema['cb_gallery_parents'] = array(
+    'description' => t('cb_gallery parents.  ie. Gallery names.'),
+    'fields' => array(
+      'gallery_id' => array(
+        'description' => t('Unique ID'),
+        'type' => 'serial',
+        'not null' => true,
+      ),
+      'gallery_name' => array(
+        'description' => t('The name of the gallery.'),
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => true,
+      )
+    ),
+    'primary key' => array('gallery_id')
+  );
+  // Media within the gallerys. Related by 'gallery_id.'
+  $schema['cb_gallery_children'] = array(
+    'description' => t('cb_gallery children.  ie. image/video names.'),
+    'fields' => array(
+      'media_id' => array(
+        'description' => t('Unique ID'),
+        'type' => 'serial',
+        'unsigned' => true,
+        'not null' => true,
+      ),
+      'gallery_id' => array(
+        'description' => t('Foreign Key. Relates to cb_gallery_parent table.'),
+        'type' => 'numeric',
+        'precision' => 10,
+        'scale' => '0', 
+        'not null' => true,
+      ),
+      'media_name' => array(
+        'description' => t('The name of the image/video.'),
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => true,
+      ),
+      'media_content' => array(
+        'description' => t('The offsite url / embed code / filepath of this media.'),
+        'type' => 'text'
+      ),
+      'media_caption' => array(
+        'description' => t('The optional caption for this media.'),
+        'type' => 'text'
+      ),
+      'thumbnail_path' => array(
+        'description' => t('The offsite url / embed code / filepath of this media&39;s thumbnail.'),
+        'type' => 'varchar',
+        'length' => 255,
+      ),
+      'media_type' => array(
+        'description' => t('The type of media this is expected to return. eg:[local_image],[remote_image],[video_embed]'),
+        'type' => 'varchar',
+        'length' => 30,
+        'not null' => true,
+      ),
+      'media_sort_order' => array(
+        'description' => t('The order in which the gallery items are displayed.'),
+        'type' => 'numeric',
+        'precision' => 10,
+        'scale' => 0
+      )
+    ),
+    'primary key' => array('media_id')
+  ); 
+  return $schema;
+}
+function cb_gallery_install(){
+  drupal_install_schema('cb_gallery');
+}
+function cb_gallery_uninstall(){
+  drupal_uninstall_schema('cb_gallery');
+}
+?>
