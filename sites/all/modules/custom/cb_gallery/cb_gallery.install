@@ -11,10 +11,22 @@ function cb_gallery_schema() {
         'type' => 'serial',
         'not null' => true,
       ),
-      'gallery_name' => array(
-        'description' => t('The name of the gallery.'),
+      'thumbnail_aspect_ratio' => array(
+        'description' => t('The aspect ratio of the thumbnails'),
         'type' => 'varchar',
-        'length' => 255,
+        'length' => 20,
+        'not null' => true,
+      ),
+      'viewport_aspect_ratio' => array(
+        'description' => t('The aspect ratio of the viewport'),
+        'type' => 'varchar',
+        'length' => 20,
+        'not null' => true,
+      ),
+      'cb_gallery_width' => array(
+        'description' => t('The width of the gallery'),
+        'type' => 'varchar',
+        'length' => 20,
         'not null' => true,
       )
     ),

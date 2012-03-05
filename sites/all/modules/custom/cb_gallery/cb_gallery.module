@@ -436,6 +436,15 @@ function cb_gallery_edit_form($status,$gallery_id){
                                               '#description' => t('The name of this gallery.'),
                                               '#attributes' => array('class' =>'input_gallery_name'),
                                               '#default_value' => $gallery_name,
+                                              '#required' => TRUE,
+                                              '#prefix' => '<div id="live_preview"></div>'
+                                              );
+  $form['gallery_info']['thumbnail_aspect_ratio'] = array(
+                                              '#title'=> t('Thumbnail Aspect Ratio'),
+                                              '#type'=> 'radios',
+                                              '#options' => array('4:3'=>'4:3.', '16:9'=>'16:9.'),
+                                              '#description' => t('The aspect ratio of thumbnail images.'),
+                                              '#attributes' => array('class' =>'input_thumbnail_ratio'),
                                               '#required' => TRUE
                                               );
 $form['gallery_info']['change_gallery_name'] = array(
