@@ -1,0 +1,12 @@
+
+name = Form example
+description = Demonstrates how to use Drupal's form API.
+core = 6.x
+package = Example modules
+
+; Information added by drupal.org packaging script on 2012-02-28
+version = "6.x-1.x-dev"
+core = "6.x"
+project = "examples"
+datestamp = "1330431214"
+

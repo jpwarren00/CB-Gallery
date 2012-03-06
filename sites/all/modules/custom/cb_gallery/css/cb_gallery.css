@@ -93,27 +93,66 @@ h3.gallery_title{
   max-height:60px;
 }
 #live_preview{
-  border: 1px solid red;
   float: right;
   height: 200px;
-  width: 376px;
+  width: 260px;
 }
-#live_preview li, #live_preview div{
+
+#live_preview #preview_wrapper{
+  padding: 4px;
+  width: 150px;
+}
+#live_preview #preview_wrapper li, #live_preview #preview_wrapper div{
   border:1px solid #ccc;  
+}
+
+#live_preview h2{
+  margin:0px 0px 0px 7px;
+}
+#live_preview #thumb_port ul{
+  margin:0;
+}
+#live_preview #viewport{
+  margin-bottom:2px;
+}
+/**
+ *FourByThree 4:3 ratio
+ */
+#live_preview.fourByThree #viewport p{
+  margin: 0 auto;
+  padding: 48px 0 0 0;
+  width: 53px;
 }
 #live_preview.fourByThree #viewport {
   height: 113px;
 }
-#live_preview.fourByThree #preview_wrapper{
-  padding: 4px;
-  width: 150px;
-}
-#live_preview.fourByThree #thumb_port{
-  
+#live_preview.noViewport #viewport{
+  display:none;
 }
 #live_preview.fourByThree #thumb_port li{
   padding:0;
   height: 25px;
+  width: 33px;
+  float: left;
+  margin: 1px;
+}
+/**
+ *sixteenByNine 16:9 ratio
+ */
+#live_preview.sixteenByNine #viewport p{
+  margin: 0 auto;
+  padding: 35px 0 0 0;
+  width: 53px;
+}
+#live_preview.sixteenByNine #viewport {
+  height: 84px;
+}
+#live_preview.sixteenByNine #thumb_port{
+  
+}
+#live_preview.sixteenByNine #thumb_port li{
+  padding:0;
+  height: 18px;
   width: 33px;
   float: left;
   margin: 1px;

@@ -6,9 +6,13 @@
  */
  $(function(){ // On Document Ready
     
-    var live_preview = '<div id="preview_wrapper" class="clearfix"><div id="viewport"></div><div id="thumb_port" class="clearfix"><ul><li></li><li></li><li></li><li></li><li></li><li></li></ul></div></div>';
+    /**
+     * Live Gallery Layout Preview
+     */
+    var live_preview = '<div id="preview_wrapper" class="clearfix"><h2>Layout Preview</h2> <div id="viewport"><p>Viewport</p></div><div id="thumb_port" class="clearfix"><ul><li></li><li></li><li></li><li></li><li></li><li></li></ul></div></div>';
     $('#live_preview').addClass('fourByThree'); // Default to 4x3
     $('#live_preview').append(live_preview);
+    
     // Helper functions
     function resetEditFormFields(){
         alert('clearing');
@@ -56,6 +60,18 @@
         });
     }
     
+    // Bind Shadowbox/Viewport toggle
+    $('input[name="thumbnail_aspect_ratio"]').click(function(){
+        $('#live_preview')
+        .toggleClass('fourByThree')
+        .toggleClass('sixteenByNine'); 
+    });
+    
+    // Bind Aspect Ratio Toggle
+    $('input[name="viewport_shadowbox"]').click(function(){
+        $('#live_preview')
+        .toggleClass('noViewport')
+    });
     // Cancel Button Bindongs
     $('.cencel_edit_media_button').click(function(){
         $('#edit-edit-media-id').val('');//Remove that hidden form value!!

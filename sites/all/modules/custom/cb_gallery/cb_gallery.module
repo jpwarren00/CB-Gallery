@@ -437,26 +437,36 @@ function cb_gallery_edit_form($status,$gallery_id){
                                               '#attributes' => array('class' =>'input_gallery_name'),
                                               '#default_value' => $gallery_name,
                                               '#required' => TRUE,
-                                              '#prefix' => '<div id="live_preview"></div>'
+                                              '#prefix' => '<div id="live_preview"></div>'  // Inject the preview area into the form at this location.
                                               );
   $form['gallery_info']['thumbnail_aspect_ratio'] = array(
-                                              '#title'=> t('Thumbnail Aspect Ratio'),
+                                              '#title'=> t('Aspect Ratio'),
                                               '#type'=> 'radios',
                                               '#options' => array('4:3'=>'4:3.', '16:9'=>'16:9.'),
                                               '#description' => t('The aspect ratio of thumbnail images.'),
                                               '#attributes' => array('class' =>'input_thumbnail_ratio'),
+                                              '#default_value' => '4:3',
                                               '#required' => TRUE
                                               );
-$form['gallery_info']['change_gallery_name'] = array(
-      '#type' => 'button',
-      '#value' => t('Change Gallery Name'),
-      '#ahah' => array(
-        'event' => 'click', 
-        'path' => 'admin/cb_gallery_ajax/update_gallery_name/'.$gallery_id,
-        'wrapper' => 'cb_gallery_status',
-        'method' => 'replace',
-        'effect' => 'fade'
-        )
+  $form['gallery_info']['viewport_shadowbox'] = array(
+                                              '#title'=> t('Media Highlight Style'),
+                                              '#type'=> 'radios',
+                                              '#options' => array('shadowbox'=>'ShadowBox.', 'viewport'=>'Viewport.'),
+                                              '#description' => t('When thumbnails are clicked, you can choose to open a shadowbox, or display the media in a viewport.'),
+                                              '#attributes' => array('class' =>'input_viewport_shadowbox'),
+                                              '#default_value' => 'viewport',
+                                              '#required' => TRUE
+                                              );
+  $form['gallery_info']['change_gallery_name'] = array(
+        '#type' => 'button',
+        '#value' => t('Change Gallery Name'),
+        '#ahah' => array(
+          'event' => 'click', 
+          'path' => 'admin/cb_gallery_ajax/update_gallery_name/'.$gallery_id,
+          'wrapper' => 'cb_gallery_status',
+          'method' => 'replace',
+          'effect' => 'fade'
+          )
 );
   
   $form['new_media']['add_image']['remote_image'] = array(
