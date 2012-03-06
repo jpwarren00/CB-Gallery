@@ -5,6 +5,10 @@
  * 2-Manage Custom Show/Hides
  */
  $(function(){ // On Document Ready
+    
+    var live_preview = '<div id="preview_wrapper" class="clearfix"><div id="viewport"></div><div id="thumb_port" class="clearfix"><ul><li></li><li></li><li></li><li></li><li></li><li></li></ul></div></div>';
+    $('#live_preview').addClass('fourByThree'); // Default to 4x3
+    $('#live_preview').append(live_preview);
     // Helper functions
     function resetEditFormFields(){
         alert('clearing');
