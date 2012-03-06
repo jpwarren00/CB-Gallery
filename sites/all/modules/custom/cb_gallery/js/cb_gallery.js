@@ -9,25 +9,29 @@
     /**
      * Live Gallery Layout Preview
      */
-    var live_preview = '<div id="preview_wrapper" class="clearfix"><h2>Layout Preview</h2> <div id="viewport"><p>Viewport</p></div><div id="thumb_port" class="clearfix"><ul><li></li><li></li><li></li><li></li><li></li><li></li></ul></div></div>';
+    var live_preview = '<div id="preview_wrapper" class="clearfix"><h2>Layout Preview</h2> <div id="viewport"><p>Viewport</p></div><div id="thumb_port" class="clearfix"><ul><li></li><li></li><li></li><li></li><li></li><li></li><li></li><li></li></ul></div></div>';
     $('#live_preview').addClass('fourByThree'); // Default to 4x3
     $('#live_preview').append(live_preview);
     
     // Helper functions
     function resetEditFormFields(){
-        alert('clearing');
         $('.image_fieldset').slideUp('slow'); // hide fieldsets
         $('.video_fieldset').slideUp('slow'); // hide fieldsets
         
         // Clear all elements within this form.
         $('#cb-gallery-edit-form :text, #edit-media-caption').not('#edit-gallery-name').val('');
         $('input[name="media_type"]').attr('checked', false); // set all radio buttons to false.
+        $('#edit-edit-media-id').val('');//Remove that hidden form value!!
         
         // Button Control
         $('.submit_edit_media_button').hide();// Show the SUBMIT EDITS button.
         $('.cencel_edit_media_button').hide();// Show the Cancel EDITS button.
     }
     
+    //Happy Scroll :D
+    function happyScroll(id){
+     	$('html,body').animate({scrollTop: $(id).offset().top},'slow');
+    }
     // Helper Functions
     function populateForm(data){
         $('.input_image_name').val(data.media_name);// set the name
@@ -60,26 +64,34 @@
         });
     }
     
-    // Bind Shadowbox/Viewport toggle
+    // Bind Thumbnail Aspect Ratio
     $('input[name="thumbnail_aspect_ratio"]').click(function(){
-        $('#live_preview')
-        .toggleClass('fourByThree')
-        .toggleClass('sixteenByNine'); 
+        if($(this).val() == "16:9"){
+            $('#live_preview').addClass('sixteenByNine');
+            $('#live_preview').removeClass('fourByThree');
+        } else if($(this).val() == '4:3') {
+            $('#live_preview').addClass('fourByThree');
+            $('#live_preview').removeClass('sixteenByNine');
+        }
     });
     
-    // Bind Aspect Ratio Toggle
+    // Bind Viewport Toggle
     $('input[name="viewport_shadowbox"]').click(function(){
-        $('#live_preview')
-        .toggleClass('noViewport')
+       if($(this).val() === "shadowbox"){
+            $('#live_preview').addClass('noViewport');
+        } else {
+            $('#live_preview').removeClass('noViewport');
+        }
     });
+    
     // Cancel Button Bindongs
     $('.cencel_edit_media_button').click(function(){
-        $('#edit-edit-media-id').val('');//Remove that hidden form value!!
         $('.being_edited').removeClass('being_edited');
         $('.add_to_gallery_button').show();// Show the ADD TO GALLERY button.
         $(this).hide();// Show the ADD TO GALLERY button.
         resetEditFormFields(); // clear the form and reset for Add
     });
+    
     //Implimentation of jQuery Sortable()
     $('#my_cb_gallery').sortable({
         axis: 'y',
@@ -113,11 +125,12 @@
                             $('.submit_edit_media_button').show();// Show the SUBMIT EDITS button.
                             $('.cencel_edit_media_button').show();// Show the Cancel EDITS button.
                             populateForm(data);
+                            happyScroll('#NewMediaFormTop');
+                            $('.new_media_fieldset').addClass('being_edited');
+                            $('.input_image_name').focus();
                         }
             );
-    });
-    
-    
+    });    
     
     /**
      * Clone
@@ -132,9 +145,6 @@
                     }
             );
     });
-    
-    
-    
     
     /**
      * Media Delete Binding.
@@ -159,14 +169,14 @@
                         
                     }
             });
-    function submit_order(){
-    }
+    
     $('.form-radios input[value=video]').click(function(){
         $('.image_fieldset').slideUp('slow',function(){
             $('.video_fieldset').slideDown();
         });
         
     });
+    
     $('.form-radios input[value=image]').click(function(){
         $('.video_fieldset').slideUp('slow',function(){
            $('.image_fieldset').slideDown(); 

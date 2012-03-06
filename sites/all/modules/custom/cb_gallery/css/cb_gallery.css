@@ -7,7 +7,9 @@
 	line-height: 0;
 	height: 0;
 }
- 
+.editing{
+  border:2px solid 
+}
 .clearfix {
 	display: inline-block;
 }
@@ -33,6 +35,9 @@ h3.gallery_title{
   padding:5px;
 }
 #my_cb_gallery .dragable.being_edited{
+  border:2px solid green;
+}
+.being_edited{
   border:2px solid green;
 }
 #my_cb_gallery .dragable.being_deleted{
