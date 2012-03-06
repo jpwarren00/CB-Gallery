@@ -1,0 +1,6 @@
+; $Id$
+name = Collegeboard Gallery 
+description = Create gallerys using remote images, video and Shadowbox effects
+package = Collegeboard
+core = 6.x
+dependencies[] = jquery_ui
