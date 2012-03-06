@@ -28,7 +28,7 @@
  /**
   * Implimentation of hook_menu();
   * Used to render different forms depending on the URL request.
-  * http://www.mysite.com/admin/cb_gallery/GALLERY_NAME/edit    = EDIT an existing Gallery!
+  * http://www.mysite.com/admin/cb_gallery/GALLERY_ID/edit    = EDIT an existing Gallery!
   * http://www.mysite.com/admin/cb_gallery/add                  = ADD a new CB Gallery!
   * http://www.mysite.com/admin/cb_gallery/manage               = Manage existing CB Galleries!
   */
@@ -62,6 +62,7 @@ function cb_gallery_menu(){
     'page arguments' => array(2), // Pass serial data from URL to page function as an argument.
     'access arguments' => array('access content js'),
     );
+  
   /**
    * Listen for Gallery edit requests
    */
@@ -71,6 +72,7 @@ function cb_gallery_menu(){
     'page arguments' => array(2), // Pass %gallery_id% from URL to page function as an argument.
     'access arguments' => array('access content')
     );
+  
   /**
    *Listen for Gallery add requests
    */
@@ -161,8 +163,9 @@ function cb_gallery_ajax_delete_media($media_id){
   return drupal_json(array('message_class'=>'status', 'message'=>'Media has been successfully removed.'));
 }
 /**
- * cb_gallery_ajax_update_gallery_name
- * This is the processing for an AJAX call that updates the gallery name.
+ * cb_gallery_ajax_update_gallery
+ * This is the processing for an AJAX call that updates the gallery details.
+ * 
  */
 function cb_gallery_ajax_update_gallery($gallery_id){
   
