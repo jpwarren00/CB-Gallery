@@ -281,7 +281,7 @@ function cb_gallery_add_page(){
   $output = t('Add a NEW CB Gallery!');
   $output .= drupal_get_form('cb_gallery_add_form');
   return $output;
-}
+} 
 
 
 /**
