@@ -97,7 +97,7 @@ function cb_gallery_ajax_edit_media($media_id){
   return drupal_json($row);
   
 }
-function insert_gallery_fields(&$form){ // This form is used in two places. So it is in a function.
+function insert_gallery_fields(&$form, $gallery_name = NULL){ // This form is used in two places. So it is in a function.
   
   // Gallery Name
   $form['gallery_info']['gallery_name'] = array(
@@ -176,17 +176,9 @@ function cb_gallery_ajax_update_gallery($gallery_id){
   );
   
   $clean = filter_input_array(INPUT_POST,$args);
-  
   array_push($clean,$gallery_id); // add the galleryID last.
-  
   $sql    = "UPDATE {cb_gallery_parents} SET gallery_name='%s', thumbnail_aspect_ratio='%s', viewport_shadowbox='%s' WHERE gallery_id = '%d';";
-  $args   = array(
-              $clean['gallery_name'],
-              $clean['thumbnail_aspect_ratio'],
-              $clean['viewport_shadowbox']
-            );
-  
-  db_query($sql,$args); 
+  db_query($sql,$clean ); 
   return drupal_json(array('status' => TRUE, 'data' => '<div class="status">Gallery Name has been Changed to &#39;'.$clean['gallery_name'].'&#39;</div>'));
 }
 /**
@@ -245,7 +237,7 @@ function cb_gallery_edit_page($gallery_id){
   
   // Build Form
   $output .= '<div id="cb_gallery_status"></div>';
-  $output .= drupal_get_form('cb_gallery_edit_form',$gallery_id); // form used when EDITING an existing cb_gallery
+  $output .= drupal_get_form('cb_gallery_form',$gallery_id); // form used when EDITING an existing cb_gallery
   $output .= '<h3 class="gallery_title">Change the order of your gallery.</h3>';
   $output .= '<div id="cb_gallery_sort_status"></div>';
   $output .= '<div id="my_cb_gallery" class="clearfix" rel="'.$gallery_id.'">';
@@ -333,10 +325,18 @@ function cb_gallery_add_form(){
  */
 function cb_gallery_add_form_submit($form, &$form_state){
   // Vars
-  $gallery_name = $form_state['values']['gallery_name'];
-  $insert_qry   = "INSERT INTO {cb_gallery_parents} (gallery_name) VALUES ('%s');";
-  $select_qry   = "SELECT gallery_id FROM {cb_gallery_parents} WHERE gallery_name = '%s';";
-  $args         = array($gallery_name);
+  $gallery_name           = $form_state['values']['gallery_name'];
+  $thumbnail_aspect_ratio = $form_state['values']['thumbnail_aspect_ratio'];
+  $viewport_shadowbox     = $form_state['values']['viewport_shadowbox'];
+  
+  $insert_qry   = "INSERT
+                  INTO {cb_gallery_parents} (gallery_name, thumbnail_aspect_ratio, viewport_shadowbox)
+                  VALUES ('%s', '%s', '%s');";
+  $select_qry   = "SELECT
+                  gallery_id
+                  FROM {cb_gallery_parents}
+                  WHERE gallery_name = '%s';";
+  $args         = array($gallery_name, $thumbnail_aspect_ratio, $viewport_shadowbox);
   
   // Insert the new gallery into the DB.
   db_query($insert_qry,$args);
@@ -357,12 +357,12 @@ function cb_gallery_add_form_submit($form, &$form_state){
  *  POST processing
  *  Handle post-validation form submission
  */
-function cb_gallery_edit_form_submit($form, &$form_state){
+function cb_gallery_form_submit($form, &$form_state){
   
   // Vars
   $gallery_name     = $form_state['values']['gallery_name'];
   $media_name       = $form_state['values']['media_name'];
-  $media_content    = ($form_state['values']['media_type'] == 'Video' ? $form_state['values']['embed_code'] : $form_state['values']['remote_image']);
+  $media_content    = ($form_state['values']['media_type'] == 'video' ? $form_state['values']['video_embed_code'] : $form_state['values']['remote_image']);
   $media_caption   = $form_state['values']['media_caption'];
   $thumbnail_path   = $form_state['values']['thumbnail_path'];
   $media_type       = $form_state['values']['media_type'];
@@ -399,12 +399,12 @@ function cb_gallery_edit_form_submit($form, &$form_state){
  * Used by users to add new media to a gallery
  * Form API Schema
  */
-function cb_gallery_edit_form($status,$gallery_id){
+function cb_gallery_form($status,$gallery_id){
   $sql = "SELECT gallery_name FROM {cb_gallery_parents} WHERE gallery_id = '%d';";
   $args = array($gallery_id);
   $result = db_query($sql, $args);
   while($row = db_fetch_object($result)){
-   $gallery_name = $row->gallery_name;
+   $gallery_name = $row->gallery_name; //Get Gallery Name
   }
   
   $form['gallery_info'] = array(
@@ -477,7 +477,7 @@ function cb_gallery_edit_form($status,$gallery_id){
     '#attributes' => array('class' => 'image_fieldset', 'style'=>'display:none;'),
     );
   
-  insert_gallery_fields(&$form);
+  insert_gallery_fields(&$form, $gallery_name);
   
   $form['gallery_info']['update_gallery'] = array(
     '#type' => 'button',
@@ -535,3 +535,39 @@ function cb_gallery_edit_form($status,$gallery_id){
   
   return $form;
 }
+
+function cb_gallery_node_info() {
+  return array(
+    'cb_gallery' => array(
+      'name' => t('CB Gallery'),
+      'module' => 'cb_gallery',
+      'description' => "Create gallerys for remote images and embeded video.",
+    )
+  );
+}
+function cb_gallery_example_perm() {
+  return array('create cb_gallery node', 'edit own cb_gallery');
+}
+
+function press_release_help($path, $arg) {
+  switch ($path) {
+    case 'admin/help#cb_gallery':
+      return '<p>' . t('This module was created by Dean Shelton.') . '</p>';
+      break;
+  }
+}
+function cb_gallery_access($op, $node, $account) {
+
+  if ($op == 'create') {
+    // Only users with permission to do so may create this node type.
+    return user_access('create cb_gallery', $account);
+  }
+
+  // Users who create a node may edit or delete it later, assuming they have the
+  // necessary permissions.
+  if ($op == 'update' || $op == 'delete') {
+    if (user_access('edit own cb_gallery', $account) && ($account->uid == $node->uid)) {
+      return TRUE;
+    }
+  }
+} 
