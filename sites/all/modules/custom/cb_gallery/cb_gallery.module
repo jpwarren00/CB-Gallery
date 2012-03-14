@@ -27,10 +27,6 @@
 
  /**
   * Implimentation of hook_menu();
-  * Used to render different forms depending on the URL request.
-  * http://www.mysite.com/admin/cb_gallery/GALLERY_ID/edit    = EDIT an existing Gallery!
-  * http://www.mysite.com/admin/cb_gallery/add                  = ADD a new CB Gallery!
-  * http://www.mysite.com/admin/cb_gallery/manage               = Manage existing CB Galleries!
   */
 function cb_gallery_menu(){
   /**
@@ -73,9 +69,8 @@ function cb_gallery_menu(){
     'access arguments' => array('access content')
     );
   
-  /**
-   *Listen for Gallery add requests
-   */
+   //Listen for Gallery add requests
+   
   $items['admin/cb_gallery/add'] = array( // Add
     'title'=> 'Create a NEW CB Gallery!',
     'page callback' =>'cb_gallery_add_page', // <-----send the user to the form to add a gallery!
@@ -97,44 +92,8 @@ function cb_gallery_ajax_edit_media($media_id){
   return drupal_json($row);
   
 }
-function insert_gallery_fields(&$form, $gallery_name = NULL){ // This form is used in two places. So it is in a function.
-  
-  // Gallery Name
-  $form['gallery_info']['gallery_name'] = array(
-    '#title'=> t('Gallery Name'),
-    '#type'=> 'textfield',
-    '#description' => t('The name of this gallery.'),
-    '#attributes' => array('class' =>'input_gallery_name'),
-    '#default_value' => $gallery_name,
-    '#required' => TRUE,
-    '#prefix' => '<div id="live_preview"></div>'  // Inject the preview area into the form at this location.
-    );
-  
-  $form['gallery_info']['thumbnail_aspect_ratio'] = array(
-    '#title'=> t('Aspect Ratio'),
-    '#type'=> 'radios',
-    '#options' => array('4:3'=>'4:3.', '16:9'=>'16:9.'),
-    '#description' => t('The aspect ratio of thumbnail images.'),
-    '#attributes' => array('class' =>'input_thumbnail_ratio'),
-    '#default_value' => '4:3',
-    '#required' => TRUE
-    );
-  
-  $form['gallery_info']['viewport_shadowbox'] = array(
-    '#title'=> t('Media Highlight Style'),
-    '#type'=> 'radios',
-    '#options' => array('shadowbox'=>'ShadowBox.', 'viewport'=>'Viewport.'),
-    '#description' => t('When thumbnails are clicked, you can choose to open a shadowbox, or display the media in a viewport.'),
-    '#attributes' => array('class' =>'input_viewport_shadowbox'),
-    '#default_value' => 'viewport',
-    '#required' => TRUE
-    );
-  
-  return $form;
-}
 /**
  * cb_gallery_ajax_change_sort_order()
- * Change the sort order of any given gallery's elements.
  */
 function cb_gallery_ajax_change_sort_order($args){
   $args        = explode("-",$args);
@@ -164,8 +123,6 @@ function cb_gallery_ajax_delete_media($media_id){
 }
 /**
  * cb_gallery_ajax_update_gallery
- * This is the processing for an AJAX call that updates the gallery details.
- * 
  */
 function cb_gallery_ajax_update_gallery($gallery_id){
   
@@ -230,14 +187,10 @@ function cb_gallery_edit_page($gallery_id){
     drupal_set_message(t('The CB Gallery you requested does not exist'), 'error', FALSE);
     return FALSE; // kill form
   }
-  // Add CSS and JS  
-  drupal_add_css(drupal_get_path('module', 'cb_gallery') . '/css/cb_gallery.css');
-  drupal_add_js(drupal_get_path('module', 'cb_gallery') . '/js/cb_gallery.js');
-  jquery_ui_add('ui.sortable'); // This is why we need the jQuery UI installed
   
   // Build Form
   $output .= '<div id="cb_gallery_status"></div>';
-  $output .= drupal_get_form('cb_gallery_form',$gallery_id); // form used when EDITING an existing cb_gallery
+  $output .= drupal_get_form('cb_gallery_form',NULL,$gallery_id); // form used when EDITING an existing cb_gallery
   $output .= '<h3 class="gallery_title">Change the order of your gallery.</h3>';
   $output .= '<div id="cb_gallery_sort_status"></div>';
   $output .= '<div id="my_cb_gallery" class="clearfix" rel="'.$gallery_id.'">';
@@ -363,7 +316,7 @@ function cb_gallery_form_submit($form, &$form_state){
   $gallery_name     = $form_state['values']['gallery_name'];
   $media_name       = $form_state['values']['media_name'];
   $media_content    = ($form_state['values']['media_type'] == 'video' ? $form_state['values']['video_embed_code'] : $form_state['values']['remote_image']);
-  $media_caption   = $form_state['values']['media_caption'];
+  $media_caption    = $form_state['values']['media_caption'];
   $thumbnail_path   = $form_state['values']['thumbnail_path'];
   $media_type       = $form_state['values']['media_type'];
   $gallery_id       = get_cb_gallery_id($gallery_name);  
@@ -399,13 +352,12 @@ function cb_gallery_form_submit($form, &$form_state){
  * Used by users to add new media to a gallery
  * Form API Schema
  */
-function cb_gallery_form($status,$gallery_id){
-  $sql = "SELECT gallery_name FROM {cb_gallery_parents} WHERE gallery_id = '%d';";
-  $args = array($gallery_id);
-  $result = db_query($sql, $args);
-  while($row = db_fetch_object($result)){
-   $gallery_name = $row->gallery_name; //Get Gallery Name
-  }
+function cb_gallery_form($status, $form_state, $gallery_id){
+  
+  // Add CSS and JS  
+  drupal_add_css(drupal_get_path('module', 'cb_gallery') . '/css/cb_gallery.css');
+  drupal_add_js(drupal_get_path('module', 'cb_gallery') . '/js/cb_gallery.js');
+  jquery_ui_add('ui.sortable'); // This is why we need the jQuery UI installed
   
   $form['gallery_info'] = array(
     '#title' => t('Gallery Information'),
@@ -413,17 +365,59 @@ function cb_gallery_form($status,$gallery_id){
     '#description' => t('Edit gallery specific information'),
     '#prefix' => '<div id="GalleryInformationTop"></div>',
     '#collapsible' => TRUE,
-    '#collapsed' => TRUE
+    '#collapsed' => FALSE
     );
   
-  $form['new_media'] = array(
+  // Gallery Name
+  $form['gallery_info']['gallery_name'] = array(
+    '#title'=> t('Gallery Name'),
+    '#type'=> 'textfield',
+    '#description' => t('The name of this gallery.'),
+    '#attributes' => array('class' =>'input_gallery_name'),
+    '#required' => TRUE,
+    '#prefix' => '<div id="live_preview"></div>'  // Inject the preview area into the form at this location.
+    );
+  
+  $form['gallery_info']['thumbnail_aspect_ratio'] = array(
+    '#title'=> t('Aspect Ratio'),
+    '#type'=> 'radios',
+    '#options' => array('4:3'=>'4:3.', '16:9'=>'16:9.'),
+    '#description' => t('The aspect ratio of thumbnail images.'),
+    '#attributes' => array('class' =>'input_thumbnail_ratio'),
+    '#default_value' => '4:3',
+    '#required' => TRUE
+    );
+  
+  $form['gallery_info']['viewport_shadowbox'] = array(
+    '#title'=> t('Media Highlight Style'),
+    '#type'=> 'radios',
+    '#options' => array('shadowbox'=>'ShadowBox.', 'viewport'=>'Viewport.'),
+    '#description' => t('When thumbnails are clicked, you can choose to open a shadowbox, or display the media in a viewport.'),
+    '#attributes' => array('class' =>'input_viewport_shadowbox'),
+    '#default_value' => 'viewport',
+    '#required' => TRUE
+    );
+  /*
+  $form['gallery_info']['update_gallery'] = array(
+    '#type' => 'button',
+    '#value' => t('Create Gallery'),
+    '#ahah' => array(
+      'event' => 'click', 
+      //'path' => 'admin/cb_gallery_ajax/update_gallery/'.$gallery_id,
+      'path' => 'admin/cb_gallery/add',
+      'wrapper' => 'cb_gallery_status',
+      'method' => 'replace',
+      'effect' => 'fade'
+      )
+  );*/
+  /*$form['new_media'] = array(
     '#title' => t('Add New Image/Video'),
     '#type' => 'fieldset',
     '#description' => t('Go ahead and add an item to your gallery using the form below. If you want to edit an existing gallery item, scroll down and click the edit button of the gallery image you want to edit! It&#39;s that easy!'),
     '#collapsible' => TRUE,
     '#attributes' => array('class' =>'new_media_fieldset'),
     '#prefix' => '<div id="NewMediaFormTop"></div>',
-    '#collapsed' => FALSE
+    '#collapsed' => TRUE
     );
   
   $form['new_media']['media_name'] = array(
@@ -477,19 +471,7 @@ function cb_gallery_form($status,$gallery_id){
     '#attributes' => array('class' => 'image_fieldset', 'style'=>'display:none;'),
     );
   
-  insert_gallery_fields(&$form, $gallery_name);
   
-  $form['gallery_info']['update_gallery'] = array(
-    '#type' => 'button',
-    '#value' => t('Save Gallery Information'),
-    '#ahah' => array(
-      'event' => 'click', 
-      'path' => 'admin/cb_gallery_ajax/update_gallery/'.$gallery_id,
-      'wrapper' => 'cb_gallery_status',
-      'method' => 'replace',
-      'effect' => 'fade'
-      )
-  );
   
   $form['new_media']['add_image']['remote_image'] = array(
     '#title'=> t('Remote Image URL'),
@@ -532,8 +514,30 @@ function cb_gallery_form($status,$gallery_id){
     '#description' => t('edit_media_id'),
     '#attributes' => array('class' =>'edit_media_id')
     );
+  */
   
   return $form;
+}
+
+function cb_gallery_nodeapi(&$node, $op, $a3 = NULL, $a4 = NULL){
+  switch ($op){
+    case 'insert':
+    // Only the parent gallery is being created. The child elements will be coming as an 'update.'
+    // Always DELETE THEN INSERT from the parent gallery. UPDATE is unnessisairy.
+      
+      $sql  = "DELETE FROM {cb_gallery_parents} WHERE gallery_id='%d';";
+      $args = array($node->nid);
+      db_query($sql,$args);
+      
+      $sql  = "INSERT INTO {cb_gallery_parents} (gallery_id, gallery_name, thumbnail_aspect_ratio, viewport_shadowbox) VALUES ('%d','%s','%s','%s');";
+      $args = array($node->nid, $node->gallery_name, $node->thumbnail_aspect_ratio, $node->viewport_shadowbox);
+      db_query($sql,$args);
+    case 'update':
+    break;
+    case "view":
+    //the magic.
+    break;
+  }
 }
 
 function cb_gallery_node_info() {
@@ -545,7 +549,7 @@ function cb_gallery_node_info() {
     )
   );
 }
-function cb_gallery_example_perm() {
+function cb_gallery_perm() {
   return array('create cb_gallery node', 'edit own cb_gallery');
 }
 
