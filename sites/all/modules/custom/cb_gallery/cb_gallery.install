@@ -6,9 +6,9 @@ function cb_gallery_schema() {
   $schema['cb_gallery_parents'] = array(
     'description' => t('cb_gallery parents. ie. Gallery names.'),
     'fields' => array(
-      'gallery_id' => array(
+      'nid' => array(
         'description' => t('Unique ID'),
-        'type' => 'serial',
+        'type' => 'int',
         'not null' => true,
       ),
       'gallery_name' => array(
@@ -30,7 +30,7 @@ function cb_gallery_schema() {
         'not null' => true,
       )
     ),
-    'primary key' => array('gallery_id')
+    'primary key' => array('nid')
   );
   // Media within the gallerys. Related by 'gallery_id.'
   $schema['cb_gallery_children'] = array(
@@ -42,7 +42,7 @@ function cb_gallery_schema() {
         'unsigned' => true,
         'not null' => true,
       ),
-      'gallery_id' => array(
+      'nid' => array(
         'description' => t('Foreign Key. Relates to cb_gallery_parent table.'),
         'type' => 'numeric',
         'precision' => 10,
