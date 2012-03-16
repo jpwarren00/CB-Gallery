@@ -313,22 +313,23 @@ function _media_processing(){
     'media_caption'           =>FILTER_SANITIZE_SPECIAL_CHARS,
     'thumbnail_path'          =>FILTER_SANITIZE_SPECIAL_CHARS,
     'video_embed_code'        =>FILTER_SANITIZE_MAGIC_QUOTES, // this is an EMBED code. It will contain HTML.
-    'remote_image'            =>FILTER_SANITIZE_URL
+    'remote_image'            =>FILTER_SANITIZE_URL,
+    'edit_media_id'           =>FILTER_SANITIZE_NUMBER_INT
   );
   
   $clean = filter_input_array(INPUT_POST,$args);
   $clean['media_content'] = ($clean['media_type'] == 'video' ? $clean['video_embed_code'] : $clean['remote_image']);
   return drupal_json($clean);
-  /*if($edit_media_id){// This is an EDIT
+  if($edit_media_id){// This is an EDIT
     $sql = "UPDATE {cb_gallery_children} SET media_name = '%s',media_content = '%s',thumbnail_path = '%s',media_caption = '%s',media_type = '%s' WHERE media_id = '%d'";
     $args = array($clean['media_name'], $clean['media_content'], $clean['thumbnail_path'], $clean['media_caption'], $clean['media_type'], $edit_media_id);
   }else{
     // This is an INSERT. It's a new media item.
-    $sql = "INSERT INTO {cb_gallery_children} (nid, media_name, media_content, thumbnail_path, media_caption, media_type) VALUES ('%d', '%s', '%s', '%s', '%s', '%s');";
-    $args = array($nid, $media_name, $media_content, $thumbnail_path, $media_caption, $media_type);
+    $sql = "INSERT INTO {cb_gallery_children} (media_name, media_content, thumbnail_path, media_caption, media_type) VALUES ('%d', '%s', '%s', '%s', '%s', '%s');";
+    $args = array($clean['media_name'], $clean['media_content'], $clean['thumbnail_path'], $clean['media_caption'], $clean['media_type'], $edit_media_id);
   }
   // Insert the new gallery into the DB.
-  if(db_query($sql,$args)){
+  /*if(db_query($sql,$args)){
     // Tell the user what to do next.
     $message = 'Media has been added to the gallery.';
     drupal_set_message(t($message),'status');
