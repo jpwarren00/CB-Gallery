@@ -13,6 +13,35 @@
     $('#live_preview').addClass('fourByThree'); // Default to 4x3
     $('#live_preview').append(live_preview);
     
+    function refreshLivePreview(viewport_shadowbox,thumbnail_aspect_ratio){
+        
+        // Set default viewport values incase arguments are missing. (which happens onload).
+        if(viewport_shadowbox == undefined && thumbnail_aspect_ratio == undefined){
+            viewport_shadowbox = $('input[name="viewport_shadowbox"]:checked').val(),
+            thumbnail_aspect_ratio = $('input[name="thumbnail_aspect_ratio"]:checked').val();
+        }
+        
+            console.log(viewport_shadowbox+" | " + thumbnail_aspect_ratio);
+        switch(thumbnail_aspect_ratio){
+            case "16:9":
+                $('#live_preview').addClass('sixteenByNine');
+                $('#live_preview').removeClass('fourByThree');
+                break;
+            case "4:3":
+                $('#live_preview').addClass('fourByThree');
+                $('#live_preview').removeClass('sixteenByNine');
+                break;
+        }
+        switch(viewport_shadowbox){
+            case "shadowbox":
+                $('#live_preview').addClass('noViewport').removeClass('viewport');
+            break;
+            case "viewport":
+                $('#live_preview').addClass('viewport').removeClass('noViewport');
+            break;
+        }
+    }
+    refreshLivePreview(); // set default live-preview.
     // Helper functions
     function resetEditFormFields(){
         $('.image_fieldset').slideUp('slow'); // hide fieldsets
@@ -66,22 +95,16 @@
     
     // Bind Thumbnail Aspect Ratio
     $('input[name="thumbnail_aspect_ratio"]').click(function(){
-        if($(this).val() == "16:9"){
-            $('#live_preview').addClass('sixteenByNine');
-            $('#live_preview').removeClass('fourByThree');
-        } else if($(this).val() == '4:3') {
-            $('#live_preview').addClass('fourByThree');
-            $('#live_preview').removeClass('sixteenByNine');
-        }
+        var thumbnail_aspect_ratio = $(this).val(),
+            viewport_shadowbox = $('input[name="viewport_shadowbox"]:checked').val();
+       refreshLivePreview(viewport_shadowbox, thumbnail_aspect_ratio);
     });
     
     // Bind Viewport Toggle
     $('input[name="viewport_shadowbox"]').click(function(){
-       if($(this).val() === "shadowbox"){
-            $('#live_preview').addClass('noViewport');
-        } else {
-            $('#live_preview').removeClass('noViewport');
-        }
+        var thumbnail_aspect_ratio = $('input[name="thumbnail_aspect_ratio"]:checked').val(),
+            viewport_shadowbox = $(this).val();
+       refreshLivePreview(viewport_shadowbox, thumbnail_aspect_ratio);
     });
     
     // Cancel Button Bindongs
@@ -93,20 +116,21 @@
     });
     
     //Implimentation of jQuery Sortable()
-    $('#my_cb_gallery').sortable({
-        axis: 'y',
-        containment: 'parent',
-        stop: function(event,ui){
-            var hookMenuSafeArgs = $('#my_cb_gallery').attr('rel')+'-'+$('#my_cb_gallery').sortable('serialize');
-            hookMenuSafeArgs = hookMenuSafeArgs.replace(/&/g,"-"); // kill '&'. It would confuse hook_menu()
-            hookMenuSafeArgs = hookMenuSafeArgs.replace(/img\[\]=/g,""); // kill 'img[]='. It makes the PHP parseing easyier. The Gallery ID is the first number in the array.
-            $.getJSON('/admin/cb_gallery_ajax/change_sort_order/'+hookMenuSafeArgs,{},
-                    function(data){
-                        set_cb_status(data);
-                    });
-        }
-    });
-    
+    if($('#my_cb_gallery div').length > 1) { // Only sort if there is MORE than one media element in the gallery.
+        $('#my_cb_gallery').sortable({
+            axis: 'y',
+            containment: 'parent',
+            stop: function(event,ui){
+                var hookMenuSafeArgs = $('#my_cb_gallery').attr('rel')+'-'+$('#my_cb_gallery').sortable('serialize');
+                hookMenuSafeArgs = hookMenuSafeArgs.replace(/&/g,"-"); // kill '&'. It would confuse hook_menu()
+                hookMenuSafeArgs = hookMenuSafeArgs.replace(/img\[\]=/g,""); // kill 'img[]='. It makes the PHP parseing easier. The Gallery ID is the first number in the array.
+                $.getJSON('/admin/cb_gallery_ajax/change_sort_order/'+hookMenuSafeArgs,{},
+                        function(data){
+                            set_cb_status(data);
+                        });
+            }
+        });
+    }
     /**
      * Media Edit Binding
      * Turn the ADD form into an EDIT form. This will also allow for easy media cloning.
@@ -129,8 +153,32 @@
                             $('.new_media_fieldset').addClass('being_edited');
                             $('.input_image_name').focus();
                         }
-            );
+        );
     });    
+    
+    $('.submit_new_media').click(function(){
+        $.ajax({
+            type: "POST",
+            url: '/admin/cb_gallery_ajax/media_processing',
+            dataType: 'json',
+            data: {
+                'gallery_name'            : $('.input_gallery_name').val(),
+                'thumbnail_aspect_ratio'  : $('.input_thumbnail_ratio:checked').val(),
+                'viewport_shadowbox'      : $('.input_viewport_shadowbox:checked').val(),
+                'media_name'              : $('.input_image_name').val(),
+                'media_type'              : $('.input_object_type:checked').val(),
+                'media_caption'           : $('.input_image_caption').val(),
+                'thumbnail_path'          : $('.input_thumbnail_path').val(),
+                'video_embed_code'        : $('.input_video_embed_code').val(), // this will contain HTML and be sanatized on the backend.
+                'remote_image'            : $('.input_remote_image').val(),
+                'edit_media_id'           : $('.edit_media_id').val()
+                },
+            success: function (data){
+                console.log(data);
+                
+                }
+          });
+    });
     
     /**
      * Clone
