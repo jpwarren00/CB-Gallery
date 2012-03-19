@@ -34,11 +34,11 @@ h3.gallery_title{
   border:1px dashed #4D4D4D;
   padding:5px;
 }
-#my_cb_gallery .dragable.being_edited{
-  border:2px solid green;
-}
 .being_edited{
-  border:2px solid green;
+  border:2px solid green !important;
+}
+.being_cloned{
+  border:2px solid #ffc000 !important;
 }
 #my_cb_gallery .dragable.being_deleted{
   border:2px solid red;
@@ -164,3 +164,35 @@ h3.gallery_title{
   float: left;
   margin: 1px;
 }
+/*LIVE STYLES*/
+.cb_gallery_content.fourbythree div, .cb_gallery_content.fourbythree ul,.cb_gallery_content.fourbythree li{
+  border:1px solid red;
+}
+.cb_gallery_content.fourbythree .viewport p{
+  margin: 0 auto;
+  padding: 35px 0 0 0;
+  width: 53px;
+}
+.cb_gallery_content.fourbythree .viewport {
+  height: 84px;
+}
+.cb_gallery_content.fourbythree .thumb_port ul li img{
+  height:100px;
+}
+.cb_gallery_content .thumb_port{
+  padding-right:4px;
+}
+.cb_gallery_content.fourbythree .thumb_port li{
+  padding:0;
+  height: 83px;
+  width: 110px;
+  float: left;
+  margin: 4px 0 4px 4px;
+  overflow: hidden;
+}
+.cb_gallery_content.fourbythree .thumb_port li img{
+  width:100%;
+  position:left top;
+}
+
+

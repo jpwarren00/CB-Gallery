@@ -61,18 +61,17 @@ function cb_gallery_menu() {
     'access arguments' => array('access content')
     );
   
-   //Listen for Gallery add requests
-   
-  $items['admin/cb_gallery/add'] = array( // Add
-    'title'=> 'Create a NEW CB Gallery!',
-    'page callback' =>'cb_gallery_add_page', // <-----send the user to the form to add a gallery!
-    'access arguments' => array('access content')
-    );
+  
   return $items;
 }
 
 /**
- * cb_gallery_ajax_edit_media()
+ * @cb_gallery_ajax_edit_media($media_id)
+ * MASTER - CALLED ASYNCHRONOUSLY.
+ * Args: [int] media_id : (required)
+ * Returns: JSON object containing all child media information.
+ * Description:
+ * Used my Admin GUI to populate the form data for easy editing/cloning of existing media.
  */
 function cb_gallery_ajax_edit_media($media_id) {
   $sql = "SELECT media_name, media_content, media_caption, thumbnail_path, media_type, media_sort_order
@@ -85,8 +84,8 @@ function cb_gallery_ajax_edit_media($media_id) {
   
 }
 /**
- * @cb_help_function
- * MASTER - CALLED async.
+ * @cb_gallery_ajax_change_sort_order($args)
+ * MASTER - CALLED ASYNCHRONOUSLY.
  * Description:
  * This function is called by the admin GUI to save
  * the new sort-order of the gallery children.
@@ -123,6 +122,13 @@ function cb_gallery_ajax_change_sort_order($args) {
   return drupal_json(array('message_class'=>'status', 'message'=>'The new order of these items has been saved.'));
 }
 
+/**
+ * @cb_gallery_ajax_delete_media()
+ * MASTER - CALLED ASYNCHRONOUSLY.
+ * Args: [int] media_id : (required)
+ * Returns: JSON object containing a result message.
+ * Description: Used to delete a child element from the gallery.
+ */
 function cb_gallery_ajax_delete_media($media_id) {
   $sql = "DELETE FROM {cb_gallery_children} WHERE media_id = '%d';";
   $sql_args = array($media_id);
@@ -132,7 +138,11 @@ function cb_gallery_ajax_delete_media($media_id) {
   return drupal_json(array('message_class'=>'status', 'message'=>'Media has been successfully removed.'));
 }
 /**
- * cb_gallery_ajax_update_gallery
+ * @cb_gallery_ajax_update_gallery($nid)
+ * MASTER - CALLED ASYNCHRONOUSLY.
+ * Args: [int] nid : (required)
+ * Returns: JSON object containing a result message.
+ * Desctiption: Used to update a media items information.
  */
 function cb_gallery_ajax_update_gallery($nid) {
   $args = array(
@@ -149,8 +159,8 @@ function cb_gallery_ajax_update_gallery($nid) {
 }
 
 /**
- * @cb_help_function
- * CAN BE USED ASYNCHRONOUSLY, BUT NOT CALLED DIRECTLY.
+ * @_get_cb_gallery_info($nid, $single_new_item = NULL)
+ * CAN BE USED ASYNCHRONOUSLY.
  * Description: Used to pull gallery_info from the database.
  * Args:
  *     [int] nid : (required)  The nid of the gallery.
@@ -186,8 +196,8 @@ function _get_cb_gallery_info($nid, $single_new_item = NULL) {
   $sql .= " ORDER BY cb_gallery_children.media_sort_order;";
   $result = db_query($sql, $args);
   
-  $i=0;// set the iterator as the media[index][]
-  while($row=db_fetch_object($result)) {
+  $i = 0;// set the iterator as the media[index][]
+  while($row = db_fetch_object($result)) {
     if(!empty($row->gallery_name)) {
       // Gallery data simply overwrites itself during iteration.
       // We may return gallery data with no child data, if this is an empty gallery.
@@ -267,7 +277,7 @@ function _render_gallery_gui_elements($nid, $gallery_info = NULL, $single_new_it
       $reorder_gallery_gui .=  '<p class="img_wrapper"><img src="'.$media['thumbnail_path'].'"/></p>';
       $reorder_gallery_gui .=  '<div class="inner_wrap">';
       $reorder_gallery_gui .=    '<h2>'.$media['media_name'].'</h2>';
-      $reorder_gallery_gui .=    '<p class="media_caption">&nbsp;'.$media['media_caption'].'</p>';
+      $reorder_gallery_gui .=    '<p class="media_caption">&nbsp;'.(!empty($media['media_caption']) ? $media['media_caption'] : 'No Caption.').'</p>';
       $reorder_gallery_gui .=  '</div>';
       $reorder_gallery_gui .= '</div>';
       $i++;
@@ -350,11 +360,9 @@ function _media_processing($gallery_nid){
 
 
 /**
- * EDIT FORM
- * Used by users to add new media to a gallery
- * Form API Schema
+ * Implimentation of HOOK_form();
  */
-function cb_gallery_form($node, $form_state){
+function cb_gallery_form($node, $form_state) {
   
   // Add CSS and JS needed for the form.
   drupal_add_css(drupal_get_path('module', 'cb_gallery') . '/css/cb_gallery.css');
@@ -362,7 +370,9 @@ function cb_gallery_form($node, $form_state){
   jquery_ui_add('ui.sortable'); // This is why we need the jQuery UI installed
   
   // Get gallery data.
-  if(isset($node->nid)){$gallery_info = _get_cb_gallery_info($node->nid, NULL);}
+  if(isset($node->nid)) {
+    $gallery_info = _get_cb_gallery_info($node->nid, NULL);
+  }
   
   $form['gallery_info'] = array(
     '#title' => t('Gallery Information'),
@@ -402,123 +412,123 @@ function cb_gallery_form($node, $form_state){
     '#default_value'=> (isset($gallery_info['gallery_info']['viewport_shadowbox']) ? $gallery_info['gallery_info']['viewport_shadowbox'] : 'viewport'),
     '#required' => TRUE
     );
-  if(isset($node->nid)){ // Being EDITed. Not ADDed.
+  
+  if(isset($node->nid)) { // Being EDITed. Not ADDed.
     
     $reorder_gallery_gui .= '<h3 class="gallery_title">Change the order of your gallery.</h3>';
     $reorder_gallery_gui .= '<div id="cb_gallery_sort_status"></div>';
     $reorder_gallery_gui .= '<div id="my_cb_gallery" class="clearfix" rel="'.$node->nid.'">';
     $reorder_gallery_gui .= _render_gallery_gui_elements($node->nid, $gallery_info, NULL);  // Render all sortable gallery elements (without calling another query).
     $reorder_gallery_gui .= '</div>';
-  
-    $form['new_media'] = array(
-    '#title' => t('Add New Image/Video'),
-    '#type' => 'fieldset',
-    '#description' => t('Go ahead and add an item to your gallery using the form below. If you want to edit an existing gallery item, scroll down and click the edit button of the gallery image you want to edit! It&#39;s that easy!'),
-    '#collapsible' => TRUE,
-    '#attributes' => array('class' =>'new_media_fieldset'),
-    '#prefix' => '<div id="NewMediaFormTop"></div>',
-    '#collapsed' => TRUE
-    );
-  
-  $form['new_media']['media_name'] = array(
-    '#title'=> t('Human Readable Name For This Image or Video'),
-    '#type'=> 'textfield',
-    '#description' => t('This name is used in the alt tag for images and thumbnails. example: Picture of the Collegeboard Content Editors.'),
-    '#attributes' => array('class' =>'input_image_name'),
-    '#required' => FALSE
-    );
-  
-  $form['new_media']['media_caption'] = array(
-    '#title'=> t('Optional Image Caption (HTML okay)'),
-    '#type'=> 'textarea',
-    '#description' => t('Use create a caption for this image. Leave blank if you do not want a caption.'),
-    '#attributes' => array('class' =>'input_image_caption'),
-    '#required' => FALSE
-    );
-  
-  $form['new_media']['thumbnail_path'] = array(
-    '#title' => t('Thumbnail Image URL'),
-    '#type' => 'textfield',
-    '#attributes' => array('class' =>'input_thumbnail_path'),
-    '#description' => t('Use this field to define a thumbnail image to use for this Image or Video.'),
-    '#required' => FALSE
-    );
-  
-  $form['new_media']['media_type'] = array(
-    '#title'=> t('What type of meida are you adding to this gallery?'),
-    '#description' => t('ALL images should be hosted elsewhere, already cropped to your desired aspect ratio.'),
-    '#type'=> 'radios',
-    '#options' => array(t('image')=>'Image.', t('video')=>'Video.'),
-    '#attributes' => array('class' =>'input_object_type'),
-    '#required' => FALSE
-    );
-  
-  $form['new_media']['add_video'] = array(
-    '#title' => t('Add a Video'),
-    '#type' => 'fieldset',
-    '#description' => t('Add a video using this fieldset.'),
-    '#collapsible' => FALSE,
-    '#collapsed' => FALSE,
-    '#attributes' => array('class' => 'video_fieldset', 'style'=>'display:none;'),
-    );
-  
-  $form['new_media']['add_image'] = array(
-    '#title' => t('Add an Image'),
-    '#type' => 'fieldset',
-    '#description' => t('ALL images should be hosted elsewhere, already cropped to your desired aspect ratio.'),
-    '#collapsible' => FALSE,
-    '#collapsed' => FALSE,
-    '#attributes' => array('class' => 'image_fieldset', 'style'=>'display:none;'),
-    );
-  
-  $form['new_media']['add_image']['remote_image'] = array(
-    '#title'=> t('Remote Image URL'),
-    '#type'=> 'textfield',
-    '#description' => t('Remote Image URL'),
-    '#attributes' => array('class' =>'input_remote_image')
-    );
-  
-  //Add Video
-  $form['new_media']['add_video']['video_embed_code'] = array(
-    '#title'=> t('Video Embed Code'),
-    '#type'=> 'textarea',
-    '#description' => t('Paste your video embed code here.'),
-    '#attributes' => array('class' =>'input_video_embed_code')
-    );
-  
-  
-  $form['new_media']['submit_edit_media'] = array(
-    '#type'=>'submit',
-    '#value'=>t('Save Edits'),
-    '#attributes' => array('class' =>'submit_edit_media_button', 'style'=>'display:none', 'onclick'=>'return false;'),
-    );
-  $form['new_media']['add_media_button'] = array(
-    '#type'=>'submit',
-    '#value'=>t('Add to Gallery'),
-    '#attributes' => array('class' =>'submit_new_media', 'onclick'=> 'return false;')
-    );
-  
-  $form['new_media']['cancel_edit_media'] = array(
-    '#type'=>'submit',
-    '#value'=>t('Cancel'),
-    '#prefix'=>'&nbsp;&nbsp;&nbsp;',
-    '#attributes' => array('class' =>'cencel_edit_media_button', 'style'=>'display:none', 'onclick'=>'return false;')
-    );
-  
-  $form['edit_media_id'] = array(
-    '#title'=> t('Video Embed Code'),
-    '#type'=> 'hidden',
-    '#description' => t('edit_media_id'),
-    '#attributes' => array('class' =>'edit_media_id')
-    );
-  $form['gallery_nid'] = array(
-    '#title'=> t('Gallery NID'),
-    '#type'=> 'hidden',
-    '#description' => t('gallery_nid'),
-    '#attributes' => array('class' =>'gallery_nid'),
-    '#default_value' => $node->nid
-    );
     
+    $form['new_media'] = array(
+      '#title' => t('Add New Image/Video'),
+      '#type' => 'fieldset',
+      '#description' => t('Go ahead and add an item to your gallery using the form below. If you want to edit an existing gallery item, scroll down and click the edit button of the gallery image you want to edit! It&#39;s that easy!'),
+      '#collapsible' => TRUE,
+      '#attributes' => array('class' =>'new_media_fieldset'),
+      '#prefix' => '<div id="NewMediaFormTop"></div>',
+      '#collapsed' => TRUE
+      );
+      
+    $form['new_media']['media_name'] = array(
+      '#title'=> t('Human Readable Name For This Image or Video'),
+      '#type'=> 'textfield',
+      '#description' => t('This name is used in the alt tag for images and thumbnails. example: Picture of the Collegeboard Content Editors.'),
+      '#attributes' => array('class' =>'input_image_name'),
+      '#required' => FALSE
+      );
+      
+    $form['new_media']['media_caption'] = array(
+      '#title'=> t('Optional Image Caption (HTML okay)'),
+      '#type'=> 'textarea',
+      '#description' => t('Use create a caption for this image. Leave blank if you do not want a caption.'),
+      '#attributes' => array('class' =>'input_image_caption'),
+      '#required' => FALSE
+      );
+      
+    $form['new_media']['thumbnail_path'] = array(
+      '#title' => t('Thumbnail Image URL'),
+      '#type' => 'textfield',
+      '#attributes' => array('class' =>'input_thumbnail_path'),
+      '#description' => t('Use this field to define a thumbnail image to use for this Image or Video.'),
+      '#required' => FALSE
+      );
+      
+    $form['new_media']['media_type'] = array(
+      '#title'=> t('What type of meida are you adding to this gallery?'),
+      '#description' => t('ALL images should be hosted elsewhere, already cropped to your desired aspect ratio.'),
+      '#type'=> 'radios',
+      '#options' => array(t('image')=>'Image.', t('video')=>'Video.'),
+      '#attributes' => array('class' =>'input_object_type'),
+      '#required' => FALSE
+      );
+      
+    $form['new_media']['add_video'] = array(
+      '#title' => t('Add a Video'),
+      '#type' => 'fieldset',
+      '#description' => t('Add a video using this fieldset.'),
+      '#collapsible' => FALSE,
+      '#collapsed' => FALSE,
+      '#attributes' => array('class' => 'video_fieldset', 'style'=>'display:none;'),
+      );
+      
+    $form['new_media']['add_image'] = array(
+      '#title' => t('Add an Image'),
+      '#type' => 'fieldset',
+      '#description' => t('ALL images should be hosted elsewhere, already cropped to your desired aspect ratio.'),
+      '#collapsible' => FALSE,
+      '#collapsed' => FALSE,
+      '#attributes' => array('class' => 'image_fieldset', 'style'=>'display:none;'),
+      );
+      
+    $form['new_media']['add_image']['remote_image'] = array(
+      '#title'=> t('Remote Image URL'),
+      '#type'=> 'textfield',
+      '#description' => t('Remote Image URL'),
+      '#attributes' => array('class' =>'input_remote_image')
+      );
+      
+    $form['new_media']['add_video']['video_embed_code'] = array(
+      '#title'=> t('Video Embed Code'),
+      '#type'=> 'textarea',
+      '#description' => t('Paste your video embed code here.'),
+      '#attributes' => array('class' =>'input_video_embed_code')
+      );
+      
+    $form['new_media']['submit_edit_media'] = array(
+      '#type'=>'submit',
+      '#value'=>t('Save Edits'),
+      '#attributes' => array('class' =>'submit_edit_media_button', 'style'=>'display:none', 'onclick'=>'return false;'),
+      );
+    $form['new_media']['add_media_button'] = array(
+      '#type'=>'submit',
+      '#value'=>t('Add to Gallery'),
+      '#attributes' => array('class' =>'submit_new_media', 'onclick'=> 'return false;')
+      );
+    
+    $form['new_media']['cancel_edit_media'] = array(
+      '#type'=>'submit',
+      '#value'=>t('Cancel'),
+      '#prefix'=>'&nbsp;&nbsp;&nbsp;',
+      '#attributes' => array('class' =>'cancel_edit_media_button', 'style'=>'display:none', 'onclick'=>'return false;')
+      );
+      
+    $form['edit_media_id'] = array(
+      '#title'=> t('Video Embed Code'),
+      '#type'=> 'hidden',
+      '#description' => t('edit_media_id'),
+      '#attributes' => array('class' =>'edit_media_id')
+      );
+      
+    $form['gallery_nid'] = array(
+      '#title'=> t('Gallery NID'),
+      '#type'=> 'hidden',
+      '#description' => t('gallery_nid'),
+      '#attributes' => array('class' =>'gallery_nid'),
+      '#default_value' => $node->nid
+      );
+        
     $form['reorder_gallery'] = array(
       '#title' => t('Reorder Gallery'),
       '#type' => 'fieldset',
@@ -527,11 +537,11 @@ function cb_gallery_form($node, $form_state){
       '#attributes' => array('class' =>'reorder_gallery_fieldset'),
       '#collapsed' => FALSE
       );
-    
+      
     $form['reorder_gallery']['this_gallery'] = array(
       '#value' => $reorder_gallery_gui
       );
-    
+      
     $form['gallery_info']['update_gallery'] = array(
       '#type' => 'button',
       '#value' => t('Save Gallery Info'),
@@ -542,19 +552,33 @@ function cb_gallery_form($node, $form_state){
         'wrapper' => 'cb_gallery_status',
         'method' => 'replace',
         'effect' => 'fade'
-        )
+      )
     );
   }
   return $form;
 }
-
-
+/**
+ * Implementation of hook_theme_registry_alter().
+ *
+ * Add nodeblock path to the 'theme paths' for the 'node' hook, and the 'block' hook.
+ * This allows us to use node-nodeblock-default.tpl.php from the module directory. Note that 
+ * the path is "unshifted" for the node theme paths array. This puts the module path
+ * before the modules/node path, but since neither of these modules implements
+ * the same templates, there is not problem.
+ */
+function cb_gallery_theme_registry_alter(&$registry) {
+  array_unshift($registry['node']['theme paths'], drupal_get_path('module', 'cb_gallery') . '/theme');
+  $registry['block']['theme paths'][] = drupal_get_path('module', 'cb_gallery') . '/theme';
+}
+/**
+ * Implimentation of hook_nodeapi()
+ */
 function cb_gallery_nodeapi(&$node, $op, $a3 = NULL, $a4 = NULL){
   switch ($op){
     
     case 'insert':
     // Only the parent gallery is being created. The child elements will be coming as an 'update.'
-    // Always DELETE THEN INSERT from the parent gallery. UPDATE is unnessisairy.
+    // Always DELETE, THEN INSERT from the parent gallery. UPDATE is unnessisairy.
       
       $sql  = "DELETE FROM {cb_gallery_parents} WHERE nid='%d';";
       $args = array($node->nid);
@@ -565,9 +589,28 @@ function cb_gallery_nodeapi(&$node, $op, $a3 = NULL, $a4 = NULL){
       db_query($sql,$args);
     break;
     case "view":
-    //the magic.
+      // the magic
     break;
   }
+}
+
+/**
+ * Implementation of hook_preprocess_node().
+ *
+ * Add node-nodeblock-default to the suggested theme files for all nodeblock
+ * enabled nodes. Note that the template is "unshifted" onto the template files
+ * array. This gives the template file a lower priority than any node-nodetype
+ * templates, but a higher priority than a generic node.tpl.php.
+ */
+function cb_gallery_preprocess_node(&$variables) {
+  drupal_add_css(drupal_get_path('module', 'cb_gallery') . '/css/cb_gallery.css');
+  drupal_add_js(drupal_get_path('module', 'cb_gallery') . '/js/cb_gallery.js');
+  if ($variables['node']->cb_gallery) {
+    array_unshift($variables['template_files'], 'node-cb_gallery');
+  }
+  $gallery_info = _get_cb_gallery_info($variables['nid'], $single_new_item = NULL);
+  $variables['title'] = $gallery_info['gallery_info']['gallery_name'];
+  $variables['gallery_info'] = $gallery_info;
 }
 
 function cb_gallery_node_info() {

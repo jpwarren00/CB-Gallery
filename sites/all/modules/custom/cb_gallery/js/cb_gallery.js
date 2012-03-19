@@ -47,6 +47,8 @@
     refreshLivePreview(); // set default live-preview.
     // Helper functions
     function resetEditFormFields(){
+        $('.being_cloned').removeClass('being_cloned');
+        $('.being_edited').removeClass('being_edited');
         $('.image_fieldset').slideUp('slow'); // hide fieldsets
         $('.video_fieldset').slideUp('slow'); // hide fieldsets
         
@@ -57,7 +59,7 @@
         
         // Button Control
         $('.submit_edit_media_button').hide();// Show the SUBMIT EDITS button.
-        $('.cencel_edit_media_button').hide();// Show the Cancel EDITS button.
+        $('.cancel_edit_media_button').hide();// Show the Cancel EDITS button.
     }
     
     //Happy Scroll :D
@@ -70,6 +72,7 @@
         $('.input_image_caption').val(data.media_caption);// set the caption
         $('.input_thumbnail_path').val(data.thumbnail_path);// set the thumbnail
         $('input[name="media_type"]').attr('checked', false); // set all radio buttons to false.
+        $('.cancel_edit_media_button').show();// Show the Cancel EDITS button.
         switch(data.media_type)
         {
             case "video":
@@ -111,30 +114,14 @@
     });
     
     // Cancel Button Bindongs
-    $('.cencel_edit_media_button').click(function(){
+    $('.cancel_edit_media_button').click(function(){
         $('.being_edited').removeClass('being_edited');
+        $('.being_cloned').removeClass('being_cloned'); 
         $('.add_to_gallery_button').show();// Show the ADD TO GALLERY button.
         $(this).hide();// Show the ADD TO GALLERY button.
         resetEditFormFields(); // clear the form and reset for Add
     });
     
-    //Implimentation of jQuery Sortable()
-    if($('#my_cb_gallery > div').length > 1) { // Only sort if there is MORE than one media element in the gallery.
-        $('#my_cb_gallery').sortable({
-            axis: 'y',
-            containment: 'parent',
-            stop: function(event,ui){
-                var hookMenuSafeArgs = $('#my_cb_gallery').attr('rel')+'-'+$('#my_cb_gallery').sortable('serialize');
-                hookMenuSafeArgs = hookMenuSafeArgs.replace(/&/g,"-"); // kill '&'. It would confuse hook_menu()
-                hookMenuSafeArgs = hookMenuSafeArgs.replace(/img\[\]=/g,""); // kill 'img[]='. It makes the PHP parseing easier. The Gallery ID is the first number in the array.
-                $.getJSON('/admin/cb_gallery_ajax/change_sort_order/'+hookMenuSafeArgs,{},
-                        function(data){
-                           set_cb_status(data);
-                        });
-            }
-        });
-    }
-       
     
     $('.submit_new_media, .submit_edit_media_button').click(function(){
       var op = ($(this).hasClass('submit_edit_media_button') ? 'update' : 'insert');
@@ -196,7 +183,25 @@
      * with the DOM.
      */
     function resetEventBindings(){
-      
+        console.log($(this).callee);
+    //Implimentation of jQuery Sortable()
+    if($('#my_cb_gallery > div').length > 1) { // Only allow sort if there is MORE than one media element in the gallery.
+        $('#my_cb_gallery').sortable({
+            axis: 'y',
+            containment: 'parent',
+            stop: function(event,ui){
+                var hookMenuSafeArgs = $('#my_cb_gallery').attr('rel')+'-'+$('#my_cb_gallery').sortable('serialize');
+                hookMenuSafeArgs = hookMenuSafeArgs.replace(/&/g,"-"); // kill '&'. It would confuse hook_menu()
+                hookMenuSafeArgs = hookMenuSafeArgs.replace(/img\[\]=/g,""); // kill 'img[]='. It makes the PHP parseing easier. The Gallery ID is the first number in the array.
+                $.getJSON('/admin/cb_gallery_ajax/change_sort_order/'+hookMenuSafeArgs,{},
+                        function(data){
+                           set_cb_status(data);
+                        });
+            }
+        });
+    }else{
+        //$('#my_cb_gallery').sortable('disable');
+    }
       // Edit Binding.
      $('.media_edit').click(function(obj){
          var media_id = $(this).parents('.dragable').attr('id').replace('img_','');
@@ -207,28 +212,38 @@
                          function(data){
                              $('.image_fieldset').slideUp('slow'); // hide fieldsets
                              $('.video_fieldset').slideUp('slow'); // hide fieldsets
-                             $('.add_to_gallery_button').hide();// Hide the ADD TO GALLERY button.
+                             $('#edit-add-media-button').hide();// Hide the ADD TO GALLERY button.
                              $('.submit_edit_media_button').show();// Show the SUBMIT EDITS button.
-                             $('.cencel_edit_media_button').show();// Show the Cancel EDITS button.
+                             $('.cancel_edit_media_button').show();// Show the Cancel EDITS button.
                              populateForm(data);
                              happyScroll('#NewMediaFormTop');
                              $('.new_media_fieldset')
-                             .removeClass('collapsed')
-                             .addClass('being_edited');
+                                .removeClass('collapsed')
+                                .addClass('being_edited');
                              $('> div:not(.action)', $('.new_media_fieldset')).slideDown();
                              $('.input_image_name').focus();
+                             $('.submit_new_media').hide();
                          }
          );
      });
      
    // Clone Binding
       $('.media_clone').click(function(obj){
+         $('.being_cloned').removeClass('being_cloned'); // clear all 'being_edited' classes.
+        $(this).parents('.dragable').addClass('being_cloned');// add class to the gallery element being cloned.
+        $('.submit_new_media').show();// Show the SUBMIT EDITS button.
           var media_id = $(this).parents('.dragable').attr('id').replace('img_','');
           $.getJSON($(this).attr('href'),{},
                           function(data){
                               $('.image_fieldset').slideUp('slow'); // hide fieldsets
                               $('.video_fieldset').slideUp('slow'); // hide fieldsets
                               populateForm(data);
+                              happyScroll('#NewMediaFormTop');
+                              $('.new_media_fieldset')
+                                .removeClass('collapsed')
+                                .addClass('being_cloned');
+                             $('> div:not(.action)', $('.new_media_fieldset')).slideDown();
+                             $('.input_image_name').focus();
                       }
               );
       });
