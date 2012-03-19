@@ -6,6 +6,10 @@
  */
  $(function(){ // On Document Ready
     
+      // Event binding must be reapplied when new gellery items are created.
+      // This function will register all gallery_reorder_gui events.
+      resetEventBindings(); 
+     
     /**
      * Live Gallery Layout Preview
      */
@@ -21,7 +25,6 @@
             thumbnail_aspect_ratio = $('input[name="thumbnail_aspect_ratio"]:checked').val();
         }
         
-            console.log(viewport_shadowbox+" | " + thumbnail_aspect_ratio);
         switch(thumbnail_aspect_ratio){
             case "16:9":
                 $('#live_preview').addClass('sixteenByNine');
@@ -48,7 +51,7 @@
         $('.video_fieldset').slideUp('slow'); // hide fieldsets
         
         // Clear all elements within this form.
-        $('#cb-gallery-edit-form :text, #edit-media-caption').not('#edit-gallery-name').val('');
+        $('#node-form :text, #edit-media-caption').not('#edit-gallery-name, :hidden').val('');
         $('input[name="media_type"]').attr('checked', false); // set all radio buttons to false.
         $('#edit-edit-media-id').val('');//Remove that hidden form value!!
         
@@ -89,7 +92,7 @@
             .empty()                       // Clear the Status
             .addClass(data.message_class)  // Style the Status
             .html(data.message)            // Write the Status
-            .slideDown();                   // Show the Status
+            .slideDown()                   // Show the Status
         });
     }
     
@@ -116,7 +119,7 @@
     });
     
     //Implimentation of jQuery Sortable()
-    if($('#my_cb_gallery div').length > 1) { // Only sort if there is MORE than one media element in the gallery.
+    if($('#my_cb_gallery > div').length > 1) { // Only sort if there is MORE than one media element in the gallery.
         $('#my_cb_gallery').sortable({
             axis: 'y',
             containment: 'parent',
@@ -126,40 +129,19 @@
                 hookMenuSafeArgs = hookMenuSafeArgs.replace(/img\[\]=/g,""); // kill 'img[]='. It makes the PHP parseing easier. The Gallery ID is the first number in the array.
                 $.getJSON('/admin/cb_gallery_ajax/change_sort_order/'+hookMenuSafeArgs,{},
                         function(data){
-                            set_cb_status(data);
+                           set_cb_status(data);
                         });
             }
         });
     }
-    /**
-     * Media Edit Binding
-     * Turn the ADD form into an EDIT form. This will also allow for easy media cloning.
-     * ... Alright, here we go.
-     */
-    $('.media_edit').click(function(obj){
-        $('.being_edited').removeClass('being_edited'); // clear all 'being_edited' classes.
-        var media_id = $(this).parents('.dragable').attr('id').replace('img_','');
-        $('#edit-edit-media-id').val(media_id); // This tells PHP that we are EDITING, and not just submitting.
-        $(this).parents('.dragable').addClass('being_edited');// add class to the gallery element being edited.
-        $.getJSON($(this).attr('href'),{},
-                        function(data){
-                            $('.image_fieldset').slideUp('slow'); // hide fieldsets
-                            $('.video_fieldset').slideUp('slow'); // hide fieldsets
-                            $('.add_to_gallery_button').hide();// Hide the ADD TO GALLERY button.
-                            $('.submit_edit_media_button').show();// Show the SUBMIT EDITS button.
-                            $('.cencel_edit_media_button').show();// Show the Cancel EDITS button.
-                            populateForm(data);
-                            happyScroll('#NewMediaFormTop');
-                            $('.new_media_fieldset').addClass('being_edited');
-                            $('.input_image_name').focus();
-                        }
-        );
-    });    
+       
     
-    $('.submit_new_media').click(function(){
+    $('.submit_new_media, .submit_edit_media_button').click(function(){
+      var op = ($(this).hasClass('submit_edit_media_button') ? 'update' : 'insert');
+      var gallery_nid = $('.gallery_nid').val();
         $.ajax({
             type: "POST",
-            url: '/admin/cb_gallery_ajax/media_processing',
+            url: '/admin/cb_gallery_ajax/media_processing/'+gallery_nid,
             dataType: 'json',
             data: {
                 'gallery_name'            : $('.input_gallery_name').val(),
@@ -173,30 +155,85 @@
                 'remote_image'            : $('.input_remote_image').val(),
                 'edit_media_id'           : $('.edit_media_id').val()
                 },
-            success: function (data){
-                console.log(data);
-                
-                }
+            success: function (data) {
+                  if(data[0].return_media != undefined) {
+                     switch(op){
+                        case 'update':
+                           
+                        $('#my_cb_gallery .being_edited').after(data[0].return_media);// add the returned element to the DOM.
+                        $('#my_cb_gallery .being_edited').fadeOut('slow',function(){
+                           $('#my_cb_gallery .new_cb_addition').fadeIn('slow',function(){
+                              
+                              $(this).removeClass('new_cb_addition'); // remove "new_addition" flag
+                              $('.being_edited').removeClass('being_edited');//remove all editing styles
+                           }); 
+                        });
+                        break;
+                        case 'insert':
+                           $('#my_cb_gallery').prepend(data[0].return_media);// add the returned element to the DOM.
+                           $('#my_cb_gallery .new_cb_addition').fadeIn('slow',function(){
+                              $(this).removeClass('new_cb_addition');
+                              }); 
+                           
+                        break;
+                     }
+                     $('#my_cb_gallery .empty').fadeOut('slow',function(){$(this).remove();}); // remove empty placeholder if it exists
+                     resetEditFormFields(); // Clear out the form
+                     resetEventBindings(); // Reset the jquery event bindings to include the newly added DOM element.
+                  } 
+               }
           });
     });
     
     /**
-     * Clone
+     * @function
+     * resetEventBindings
+     * Args: NONE
+     * Return: NULL
+     * Description:
+     * When a new gallery item is created, it's menu is unbound.
+     * This function will register the click events of the new item
+     * with the DOM.
      */
-    $('.media_clone').click(function(obj){
-        var media_id = $(this).parents('.dragable').attr('id').replace('img_','');
-        $.getJSON($(this).attr('href'),{},
-                        function(data){
-                            $('.image_fieldset').slideUp('slow'); // hide fieldsets
-                            $('.video_fieldset').slideUp('slow'); // hide fieldsets
-                            populateForm(data);
-                    }
-            );
-    });
-    
-    /**
-     * Media Delete Binding.
-     */
+    function resetEventBindings(){
+      
+      // Edit Binding.
+     $('.media_edit').click(function(obj){
+         var media_id = $(this).parents('.dragable').attr('id').replace('img_','');
+         $('.being_edited').removeClass('being_edited'); // clear all 'being_edited' classes.
+         $('#edit-edit-media-id').val(media_id); // This tells PHP that we are EDITING, and not just submitting.
+         $(this).parents('.dragable').addClass('being_edited');// add class to the gallery element being edited.
+         $.getJSON($(this).attr('href'),{},
+                         function(data){
+                             $('.image_fieldset').slideUp('slow'); // hide fieldsets
+                             $('.video_fieldset').slideUp('slow'); // hide fieldsets
+                             $('.add_to_gallery_button').hide();// Hide the ADD TO GALLERY button.
+                             $('.submit_edit_media_button').show();// Show the SUBMIT EDITS button.
+                             $('.cencel_edit_media_button').show();// Show the Cancel EDITS button.
+                             populateForm(data);
+                             happyScroll('#NewMediaFormTop');
+                             $('.new_media_fieldset')
+                             .removeClass('collapsed')
+                             .addClass('being_edited');
+                             $('> div:not(.action)', $('.new_media_fieldset')).slideDown();
+                             $('.input_image_name').focus();
+                         }
+         );
+     });
+     
+   // Clone Binding
+      $('.media_clone').click(function(obj){
+          var media_id = $(this).parents('.dragable').attr('id').replace('img_','');
+          $.getJSON($(this).attr('href'),{},
+                          function(data){
+                              $('.image_fieldset').slideUp('slow'); // hide fieldsets
+                              $('.video_fieldset').slideUp('slow'); // hide fieldsets
+                              populateForm(data);
+                      }
+              );
+      });
+      
+   // Delete Binding
     $('.media_delete').click(function(obj){
         
         $(this).parents('.dragable').addClass('being_deleted');// add class to the gallery element being edited.
@@ -216,7 +253,11 @@
                         set_cb_status({message:'Nothing was deleted. Whew! That was close, huh?', message_class:'status'});
                         
                     }
-            });
+      });      
+    }
+    
+    
+    
     
     $('.form-radios input[value=video]').click(function(){
         $('.image_fieldset').slideUp('slow',function(){
