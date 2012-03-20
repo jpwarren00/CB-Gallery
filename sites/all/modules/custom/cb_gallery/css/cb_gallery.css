@@ -93,6 +93,9 @@ h3.gallery_title{
   -webkit-border-radius: 5px;
   -moz-border-radius: 5px;
 }
+#edit-thumbnail-width{
+	width:100px;
+}
 #edit-gallery-name{
 	width:400px;
 }
@@ -164,6 +167,19 @@ h3.gallery_title{
   float: left;
   margin: 1px;
 }
+/*
+#live_preview #thumbnail_preview{
+	border:1px solid red;
+	margin:0 auto;
+    display: table-cell;
+    vertical-align: middle;
+		width:167px;
+		height:125px;
+}
+#live_preview #thumbnail_preview p{
+	text-align:center;
+	margin:0 auto;
+}*/
 /*LIVE STYLES*/
 .cb_gallery_content.fourbythree div, .cb_gallery_content.fourbythree ul,.cb_gallery_content.fourbythree li{
   border:1px solid red;

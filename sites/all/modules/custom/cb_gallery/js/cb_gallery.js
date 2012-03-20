@@ -13,9 +13,6 @@
     /**
      * Live Gallery Layout Preview
      */
-    var live_preview = '<div id="preview_wrapper" class="clearfix"><h2>Layout Preview</h2> <div id="viewport"><p>Viewport</p></div><div id="thumb_port" class="clearfix"><ul><li></li><li></li><li></li><li></li><li></li><li></li><li></li><li></li></ul></div></div>';
-    $('#live_preview').addClass('fourByThree'); // Default to 4x3
-    $('#live_preview').append(live_preview);
     
     function refreshLivePreview(viewport_shadowbox,thumbnail_aspect_ratio){
         
@@ -131,7 +128,6 @@
             url: '/admin/cb_gallery_ajax/media_processing/'+gallery_nid,
             dataType: 'json',
             data: {
-                'gallery_name'            : $('.input_gallery_name').val(),
                 'thumbnail_aspect_ratio'  : $('.input_thumbnail_ratio:checked').val(),
                 'viewport_shadowbox'      : $('.input_viewport_shadowbox:checked').val(),
                 'media_name'              : $('.input_image_name').val(),

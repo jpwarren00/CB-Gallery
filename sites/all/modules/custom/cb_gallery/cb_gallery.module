@@ -146,14 +146,16 @@ function cb_gallery_ajax_delete_media($media_id) {
  */
 function cb_gallery_ajax_update_gallery($nid) {
   $args = array(
-    'gallery_name' =>FILTER_SANITIZE_SPECIAL_CHARS,
+    'title' =>FILTER_SANITIZE_SPECIAL_CHARS,
     'thumbnail_aspect_ratio' =>FILTER_SANITIZE_SPECIAL_CHARS,
-    'viewport_shadowbox' => FILTER_SANITIZE_SPECIAL_CHARS
+    'viewport_shadowbox' => FILTER_SANITIZE_SPECIAL_CHARS,
+    'unique_css_block_class' => FILTER_SANITIZE_SPECIAL_CHARS,
+    'thumbnail_width' =>FILTER_SANITIZE_SPECIAL_CHARS
   );
   
   $clean = filter_input_array(INPUT_POST,$args);
   array_push($clean,$nid); // add the galleryID last.
-  $sql    = "UPDATE {cb_gallery_parents} SET gallery_name='%s', thumbnail_aspect_ratio='%s', viewport_shadowbox='%s' WHERE nid = '%d';";
+  $sql    = "UPDATE {cb_gallery_parents} SET thumbnail_aspect_ratio='%s', viewport_shadowbox='%s', thumbnail_width='%s', unique_css_block_class='%s' WHERE nid = '%d';";
   db_query($sql, $clean); 
   return drupal_json(array('status' => TRUE, 'data' => '<div class="status">Gallery info saved</div>'));
 }
@@ -172,7 +174,6 @@ function _get_cb_gallery_info($nid, $single_new_item = NULL) {
   $args = array($nid); // Set the nid as the default argument. We may add an additional one later.
   // Build SQL to pull the galery data.
   $sql = "SELECT
-          cb_gallery_parents.gallery_name,
           cb_gallery_parents.thumbnail_aspect_ratio,
           cb_gallery_parents.viewport_shadowbox,
           cb_gallery_children.media_name,
@@ -198,10 +199,9 @@ function _get_cb_gallery_info($nid, $single_new_item = NULL) {
   
   $i = 0;// set the iterator as the media[index][]
   while($row = db_fetch_object($result)) {
-    if(!empty($row->gallery_name)) {
+    if(!empty($row->thumbnail_aspect_ratio)) {
       // Gallery data simply overwrites itself during iteration.
       // We may return gallery data with no child data, if this is an empty gallery.
-      $return['gallery_info']['gallery_name']=$row->gallery_name;
       $return['gallery_info']['thumbnail_aspect_ratio']=$row->thumbnail_aspect_ratio;
       $return['gallery_info']['viewport_shadowbox']=$row->viewport_shadowbox;
     }
@@ -295,7 +295,7 @@ function _media_processing($gallery_nid){
   
   // Sanitize input array using PHP filters.
   $post_filter_args = array(
-    'gallery_name'            =>FILTER_SANITIZE_SPECIAL_CHARS,
+    'title'            =>FILTER_SANITIZE_SPECIAL_CHARS,
     'thumbnail_aspect_ratio'  =>FILTER_SANITIZE_SPECIAL_CHARS,
     'viewport_shadowbox'      =>FILTER_SANITIZE_SPECIAL_CHARS,
     'media_name'              =>FILTER_SANITIZE_SPECIAL_CHARS,
@@ -373,7 +373,6 @@ function cb_gallery_form($node, $form_state) {
   if(isset($node->nid)) {
     $gallery_info = _get_cb_gallery_info($node->nid, NULL);
   }
-  
   $form['gallery_info'] = array(
     '#title' => t('Gallery Information'),
     '#type' => 'fieldset',
@@ -383,14 +382,30 @@ function cb_gallery_form($node, $form_state) {
     '#collapsed' => FALSE
     );
   
-  $form['gallery_info']['gallery_name'] = array(
+  $form['gallery_info']['live_preview'] = array(
+    '#value' => '
+    <div id="live_preview" class="fourByThree">
+      <div id="preview_wrapper" class="clearfix">
+        <h2>Layout Preview</h2>
+        <div id="viewport">
+          <p>Viewport</p>
+        </div>
+        <div id="thumb_port" class="clearfix">
+          <ul>
+            <li></li><li></li><li></li><li></li><li></li><li></li><li></li><li></li>
+          </ul>
+        </div>
+      </div>
+    </div>'
+  );
+  
+  $form['title'] = array(
     '#title'=> t('Gallery Name'),
     '#type'=> 'textfield',
-    '#default_value'=> (isset($gallery_info['gallery_info']['gallery_name']) ? html_entity_decode($gallery_info['gallery_info']['gallery_name'],ENT_QUOTES) : ''),
+    '#default_value'=> $node->title,
     '#description' => t('The name of this gallery.'),
     '#attributes' => array('class' =>'input_gallery_name'),
     '#required' => TRUE,
-    '#prefix' => '<div id="live_preview"></div>'  // Inject the preview area into the form at this location.
     );
   
   $form['gallery_info']['thumbnail_aspect_ratio'] = array(
@@ -412,6 +427,24 @@ function cb_gallery_form($node, $form_state) {
     '#default_value'=> (isset($gallery_info['gallery_info']['viewport_shadowbox']) ? $gallery_info['gallery_info']['viewport_shadowbox'] : 'viewport'),
     '#required' => TRUE
     );
+  
+  $form['gallery_info']['thumbnail_width'] = array(
+      '#title'=> t('Width (in pixels), by which to constrain the thumbnail images'),
+      '#type'=> 'textfield',
+      '#description' => t('The width is manually controlled here, while the height will be automatically calculated based on the aspect ratio selected above.'),
+      '#attributes' => array('class' =>'input_thumbnail_width'),
+      '#default_value' => '100px',
+      '#required' => TRUE
+  );
+  
+  $form['gallery_info']['unique_css_block_class'] = array(
+      '#title'=> t('CSS class to put in outermost div. (Makes styleing/themeing easier.)'),
+      '#type'=> 'textfield',
+      '#description' => t('Space delimited CSS class names. The text entered in here will be placed in the "class" attribute of the outermost div surrounding this node. ie. It\'s Block. '),
+      '#attributes' => array('class' =>'input_unique_css_block_class'),
+      '#default_value' => '',
+      '#required' => FALSE
+  );
   
   if(isset($node->nid)) { // Being EDITed. Not ADDed.
     
@@ -568,7 +601,9 @@ function cb_gallery_form($node, $form_state) {
  */
 function cb_gallery_theme_registry_alter(&$registry) {
   array_unshift($registry['node']['theme paths'], drupal_get_path('module', 'cb_gallery') . '/theme');
-  $registry['block']['theme paths'][] = drupal_get_path('module', 'cb_gallery') . '/theme';
+  
+  
+  
 }
 /**
  * Implimentation of hook_nodeapi()
@@ -584,12 +619,11 @@ function cb_gallery_nodeapi(&$node, $op, $a3 = NULL, $a4 = NULL){
       $args = array($node->nid);
       db_query($sql,$args);
       
-      $sql  = "INSERT INTO {cb_gallery_parents} (nid, gallery_name, thumbnail_aspect_ratio, viewport_shadowbox) VALUES ('%d','%s','%s','%s');";
-      $args = array($node->nid, $node->gallery_name, $node->thumbnail_aspect_ratio, $node->viewport_shadowbox);
+      $sql  = "INSERT INTO {cb_gallery_parents} (nid, thumbnail_aspect_ratio, viewport_shadowbox, thumbnail_width) VALUES ('%d','%s','%s', '%s');";
+      $args = array($node->nid, $node->thumbnail_aspect_ratio, $node->viewport_shadowbox, $node->thumbnail_width);
       db_query($sql,$args);
     break;
     case "view":
-      // the magic
     break;
   }
 }
@@ -609,9 +643,11 @@ function cb_gallery_preprocess_node(&$variables) {
     array_unshift($variables['template_files'], 'node-cb_gallery');
   }
   $gallery_info = _get_cb_gallery_info($variables['nid'], $single_new_item = NULL);
-  $variables['title'] = $gallery_info['gallery_info']['gallery_name'];
   $variables['gallery_info'] = $gallery_info;
+  
 }
+
+
 
 function cb_gallery_node_info() {
   return array(

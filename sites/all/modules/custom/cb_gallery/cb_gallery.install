@@ -11,12 +11,6 @@ function cb_gallery_schema() {
         'type' => 'int',
         'not null' => true,
       ),
-      'gallery_name' => array(
-        'description' => t('Name of this gallery'),
-        'type' => 'varchar',
-        'length' => 255,
-        'not null' => true,
-      ),
       'thumbnail_aspect_ratio' => array(
         'description' => t('Aspect Ratio of Thumbnails'),
         'type' => 'varchar',
@@ -28,6 +22,16 @@ function cb_gallery_schema() {
         'type' => 'varchar',
         'length' => 10,
         'not null' => true,
+      ),
+      'thumbnail_width' => array(
+        'description' => t('Width of thumbnails'),
+        'type' => 'varchar',
+        'length' => 10,
+        'not null' => true,
+      ),
+      'unique_css_block_class' => array(
+        'description' => t('CSS Class to put into the outermost div.'),
+        'type' => 'text'
       )
     ),
     'primary key' => array('nid')
