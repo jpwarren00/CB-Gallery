@@ -50,7 +50,7 @@
         $('.video_fieldset').slideUp('slow'); // hide fieldsets
         
         // Clear all elements within this form.
-        $('#node-form :text, #edit-media-caption').not('#edit-gallery-name, :hidden').val('');
+        $('#node-form :text, #edit-media-caption').not('#node-form .input_gallery_name, :hidden').val('');
         $('input[name="media_type"]').attr('checked', false); // set all radio buttons to false.
         $('#edit-edit-media-id').val('');//Remove that hidden form value!!
         

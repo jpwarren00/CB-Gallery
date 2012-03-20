@@ -192,8 +192,18 @@ h3.gallery_title{
 .cb_gallery_content.fourbythree .viewport {
   height: 84px;
 }
-.cb_gallery_content.fourbythree .thumb_port ul li img{
-  height:100px;
+ul.thumbport li{
+  padding:0;
+  margin:0;
+  float:left;
+  background:none;
+  
+}
+ul.thumbport li p{
+  padding:0;
+  margin:0;
+  overflow:hidden;
+  border:1px solid #ccc;
 }
 .cb_gallery_content .thumb_port{
   padding-right:4px;

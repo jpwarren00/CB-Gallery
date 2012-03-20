@@ -71,18 +71,29 @@
  * @see zen_process()
  */
 
-$cb_gallery='';
+$cb_gallery='<div class="cb_gallery_node">';
 if($gallery_info['gallery_info']['viewport_shadowbox'] !== 'shadowbox') {
   $cb_gallery .= '<div class="viewport">viewport</div>';
 }
 
 if(isset($gallery_info['media'])) {
-  $cb_gallery .= '<ul class="thumbport">';
+  $cb_gallery .= '<ul class="thumbport clearfix">';
   foreach($gallery_info['media'] as $media){
-    $cb_gallery .= '<li><span><img src="'.$media['thumbnail_path'].'" height="'.$gallery_info['thumbnail_height'].'"></span><li>';
+    $cb_gallery .= '<li>';
+    $cb_gallery .=  '<p style="height:'.$gallery_info['thumbnail_height'].'px">';
+    if($gallery_info['gallery_info']['viewport_shadowbox'] == 'shadowbox'){
+      $cb_gallery .= '<a href="'.$media['media_content'].'" rel="shadowbox;" onclick="return false;">';
+    }
+    $cb_gallery .=    '<img src="'.$media['thumbnail_path'].'" style="width:'.$gallery_info['gallery_info']['thumbnail_width'].'px"/>';
+    if($gallery_info['gallery_info']['viewport_shadowbox'] == 'shadowbox'){
+      $cb_gallery .= '</a>';
+    }
+    $cb_gallery .=  '</p>';
+    $cb_gallery .= '</li>';
   }
   $cb_gallery .= '</ul><!-- end thumbport -->';//end thumbport
 }
+$cb_gallery .= '</div> <!-- end cb_gallery_node -->'; //end cb_gallery_node
 ?>
 <div id="node-<?php print $node->nid; ?>" class="<?php print $classes; ?> clearfix">
   <?php print $user_picture; ?>
