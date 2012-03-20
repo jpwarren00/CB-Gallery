@@ -25,8 +25,7 @@ function cb_gallery_schema() {
       ),
       'thumbnail_width' => array(
         'description' => t('Width of thumbnails'),
-        'type' => 'varchar',
-        'length' => 10,
+        'type' => 'int',
         'not null' => true,
       ),
       'unique_css_block_class' => array(

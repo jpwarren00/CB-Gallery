@@ -146,11 +146,10 @@ function cb_gallery_ajax_delete_media($media_id) {
  */
 function cb_gallery_ajax_update_gallery($nid) {
   $args = array(
-    'title' =>FILTER_SANITIZE_SPECIAL_CHARS,
     'thumbnail_aspect_ratio' =>FILTER_SANITIZE_SPECIAL_CHARS,
     'viewport_shadowbox' => FILTER_SANITIZE_SPECIAL_CHARS,
-    'unique_css_block_class' => FILTER_SANITIZE_SPECIAL_CHARS,
-    'thumbnail_width' =>FILTER_SANITIZE_SPECIAL_CHARS
+    'thumbnail_width' =>FILTER_SANITIZE_NUMBER_INT,
+    'unique_css_block_class' => FILTER_SANITIZE_SPECIAL_CHARS
   );
   
   $clean = filter_input_array(INPUT_POST,$args);
@@ -176,6 +175,8 @@ function _get_cb_gallery_info($nid, $single_new_item = NULL) {
   $sql = "SELECT
           cb_gallery_parents.thumbnail_aspect_ratio,
           cb_gallery_parents.viewport_shadowbox,
+          cb_gallery_parents.thumbnail_width,
+          cb_gallery_parents.unique_css_block_class,
           cb_gallery_children.media_name,
           cb_gallery_children.media_content,
           cb_gallery_children.media_caption,
@@ -204,6 +205,8 @@ function _get_cb_gallery_info($nid, $single_new_item = NULL) {
       // We may return gallery data with no child data, if this is an empty gallery.
       $return['gallery_info']['thumbnail_aspect_ratio']=$row->thumbnail_aspect_ratio;
       $return['gallery_info']['viewport_shadowbox']=$row->viewport_shadowbox;
+      $return['gallery_info']['unique_css_block_class']=$row->unique_css_block_class;
+      $return['gallery_info']['thumbnail_width']=$row->thumbnail_width;
     }
       // Media data grows during iteration.
     if(!empty($row->media_id)) {
@@ -431,9 +434,9 @@ function cb_gallery_form($node, $form_state) {
   $form['gallery_info']['thumbnail_width'] = array(
       '#title'=> t('Width (in pixels), by which to constrain the thumbnail images'),
       '#type'=> 'textfield',
-      '#description' => t('The width is manually controlled here, while the height will be automatically calculated based on the aspect ratio selected above.'),
+      '#description' => t('NON NUMERIC CHARs WILL BE REMOVED. (eg. \'px\') The width is manually controlled here, while the height will be automatically calculated based on the aspect ratio selected above.'),
       '#attributes' => array('class' =>'input_thumbnail_width'),
-      '#default_value' => '100px',
+      '#default_value' => $gallery_info['gallery_info']['thumbnail_width'],
       '#required' => TRUE
   );
   
@@ -644,8 +647,15 @@ function cb_gallery_preprocess_node(&$variables) {
   }
   $gallery_info = _get_cb_gallery_info($variables['nid'], $single_new_item = NULL);
   $variables['gallery_info'] = $gallery_info;
-  
+  if($gallery_info['gallery_info']['thumbnail_aspect_ratio'] == '4:3'){
+    $variables['gallery_info']['thumbnail_height'] = ceil($gallery_info['gallery_info']['thumbnail_width'] / (4/3));
+  }else{
+    $variables['gallery_info']['thumbnail_height'] = ceil($gallery_info['gallery_info']['thumbnail_width'] / (16/9));
+  }
 }
+
+
+
 
 
 
