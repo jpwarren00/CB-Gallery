@@ -115,7 +115,9 @@ h3.gallery_title{
 #live_preview #preview_wrapper li, #live_preview #preview_wrapper div{
   border:1px solid #ccc;  
 }
-
+#live_preview #thumb_port li {
+	background:none;
+}
 #live_preview h2{
   margin:0px 0px 0px 7px;
 }
@@ -125,6 +127,11 @@ h3.gallery_title{
 #live_preview #viewport{
   margin-bottom:2px;
 }
+
+#live_preview.noViewport #viewport{
+  display:none;
+}
+
 /**
  *FourByThree 4:3 ratio
  */
@@ -132,12 +139,10 @@ h3.gallery_title{
   margin: 0 auto;
   padding: 48px 0 0 0;
   width: 53px;
+	text-align: center;
 }
 #live_preview.fourByThree #viewport {
   height: 113px;
-}
-#live_preview.noViewport #viewport{
-  display:none;
 }
 #live_preview.fourByThree #thumb_port li{
   padding:0;
@@ -153,6 +158,7 @@ h3.gallery_title{
   margin: 0 auto;
   padding: 35px 0 0 0;
   width: 53px;
+	text-align: center;
 }
 #live_preview.sixteenByNine #viewport {
   height: 84px;
@@ -167,58 +173,50 @@ h3.gallery_title{
   float: left;
   margin: 1px;
 }
-/*
-#live_preview #thumbnail_preview{
-	border:1px solid red;
-	margin:0 auto;
-    display: table-cell;
-    vertical-align: middle;
-		width:167px;
-		height:125px;
-}
-#live_preview #thumbnail_preview p{
-	text-align:center;
-	margin:0 auto;
-}*/
-/*LIVE STYLES*/
-.cb_gallery_content.fourbythree div, .cb_gallery_content.fourbythree ul,.cb_gallery_content.fourbythree li{
-  border:1px solid red;
-}
-.cb_gallery_content.fourbythree .viewport p{
+/**
+ *oneToOne 1:1 ratio
+ */
+#live_preview.oneToOne #viewport p{
   margin: 0 auto;
-  padding: 35px 0 0 0;
-  width: 53px;
+  padding: 65px 0 0 0;
+  width: 84px;
+	text-align: center;
 }
-.cb_gallery_content.fourbythree .viewport {
-  height: 84px;
+#live_preview.oneToOne #viewport {
+  height: 150px;
+}
+#live_preview.oneToOne #thumb_port{
+  
+}
+#live_preview.oneToOne #thumb_port li{
+  padding:0;
+  height: 33px;
+  width: 33px;
+  float: left;
+  margin: 1px;
+}
+
+
+/*LIVE STYLES*/
+/*These are meant to be overridden*/
+div.cb_gallery_node .viewport{
+	border:1px solid #ccc;
+}
+ul.thumbport {
+	padding: 5px 5px 0 0;
+	border:1px solid #ccc;
 }
 ul.thumbport li{
   padding:0;
-  margin:0;
+  margin:0 0 5px 5px;
   float:left;
   background:none;
-  
 }
 ul.thumbport li p{
   padding:0;
   margin:0;
   overflow:hidden;
   border:1px solid #ccc;
-}
-.cb_gallery_content .thumb_port{
-  padding-right:4px;
-}
-.cb_gallery_content.fourbythree .thumb_port li{
-  padding:0;
-  height: 83px;
-  width: 110px;
-  float: left;
-  margin: 4px 0 4px 4px;
-  overflow: hidden;
-}
-.cb_gallery_content.fourbythree .thumb_port li img{
-  width:100%;
-  position:left top;
 }
 
 

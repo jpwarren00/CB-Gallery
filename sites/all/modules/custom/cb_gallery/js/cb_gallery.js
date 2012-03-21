@@ -24,12 +24,22 @@
         
         switch(thumbnail_aspect_ratio){
             case "16:9":
-                $('#live_preview').addClass('sixteenByNine');
-                $('#live_preview').removeClass('fourByThree');
+                $('#live_preview')
+                .addClass('sixteenByNine')
+                .removeClass('fourByThree')
+                .removeClass('oneToOne');
                 break;
             case "4:3":
-                $('#live_preview').addClass('fourByThree');
-                $('#live_preview').removeClass('sixteenByNine');
+                $('#live_preview')
+                .addClass('fourByThree')
+                .removeClass('sixteenByNine')
+                .removeClass('oneToOne');
+                break;
+            case "1:1":
+                $('#live_preview')
+                  .addClass('oneToOne')
+                  .removeClass('sixteenByNine')
+                  .removeClass('fourByThree');
                 break;
         }
         switch(viewport_shadowbox){

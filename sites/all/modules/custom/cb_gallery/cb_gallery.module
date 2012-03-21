@@ -412,9 +412,9 @@ function cb_gallery_form($node, $form_state) {
     );
   
   $form['gallery_info']['thumbnail_aspect_ratio'] = array(
-    '#title'=> t('Aspect Ratio'),
+    '#title'=> t('Thumbnail Aspect Ratio'),
     '#type'=> 'radios',
-    '#options' => array('4:3'=>'4:3.', '16:9'=>'16:9.'),
+    '#options' => array('4:3'=>'4:3.', '16:9'=>'16:9.', '1:1'=>'1:1. (Square Grid)'),
     '#default_value'=> (isset($gallery_info['gallery_info']['thumbnail_aspect_ratio']) ? $gallery_info['gallery_info']['thumbnail_aspect_ratio']: '16:9'),
     '#description' => t('The aspect ratio of thumbnail images.'),
     '#attributes' => array('class' =>'input_thumbnail_ratio'),
@@ -445,7 +445,7 @@ function cb_gallery_form($node, $form_state) {
       '#type'=> 'textfield',
       '#description' => t('Space delimited CSS class names. The text entered in here will be placed in the "class" attribute of the outermost div surrounding this node. ie. It\'s Block. '),
       '#attributes' => array('class' =>'input_unique_css_block_class'),
-      '#default_value' => '',
+      '#default_value' => $gallery_info['gallery_info']['unique_css_block_class'],
       '#required' => FALSE
   );
   
@@ -604,9 +604,6 @@ function cb_gallery_form($node, $form_state) {
  */
 function cb_gallery_theme_registry_alter(&$registry) {
   array_unshift($registry['node']['theme paths'], drupal_get_path('module', 'cb_gallery') . '/theme');
-  
-  
-  
 }
 /**
  * Implimentation of hook_nodeapi()
@@ -640,23 +637,115 @@ function cb_gallery_nodeapi(&$node, $op, $a3 = NULL, $a4 = NULL){
  * templates, but a higher priority than a generic node.tpl.php.
  */
 function cb_gallery_preprocess_node(&$variables) {
+  // Incase someone is viewing this node as a node we must format it and preprocess.
   drupal_add_css(drupal_get_path('module', 'cb_gallery') . '/css/cb_gallery.css');
   drupal_add_js(drupal_get_path('module', 'cb_gallery') . '/js/cb_gallery.js');
+  
   if ($variables['node']->cb_gallery) {
     array_unshift($variables['template_files'], 'node-cb_gallery');
   }
-  $gallery_info = _get_cb_gallery_info($variables['nid'], $single_new_item = NULL);
-  $variables['gallery_info'] = $gallery_info;
-  if($gallery_info['gallery_info']['thumbnail_aspect_ratio'] == '4:3'){
-    $variables['gallery_info']['thumbnail_height'] = ceil($gallery_info['gallery_info']['thumbnail_width'] / (4/3));
-  }else{
-    $variables['gallery_info']['thumbnail_height'] = ceil($gallery_info['gallery_info']['thumbnail_width'] / (16/9));
+  
+  // Grab the gallery data.
+  $variables['cb_gallery'] = _get_cb_gallery_info($variables['nid'], $single_new_item = NULL);
+  // We must calculate ourselves, is the relative height of thumbnails
+  // based on their aspect ration and constrained widths.
+  switch($variables['cb_gallery']['gallery_info']['thumbnail_aspect_ratio']) {
+      case "4:3":
+      $variables['cb_gallery']['gallery_info']['thumbnail_height'] = ceil($variables['cb_gallery']['gallery_info']['thumbnail_width'] / (4/3));
+      break;
+    case "16:9":
+      $variables['cb_gallery']['gallery_info']['thumbnail_height'] = ceil($variables['cb_gallery']['gallery_info']['thumbnail_width'] / (16/9));
+      break;
+    case "1:1":
+      $variables['cb_gallery']['gallery_info']['thumbnail_height'] = $variables['cb_gallery']['gallery_info']['thumbnail_width'];
+      break;
   }
 }
 
 
 
+/**
+ * @function
+ * _cb_gallery_block_list
+ * Args: NONE
+ * Returns: array of loaded nodes linked to cb_gallery_parents
+ * Description: Used by hook_block to register ALL CB_gallery's as blocks!
+ *              This is an important feature for use with context module.
+ * Credit: Thanks to Josh Hoegen.
+ */
+function _cb_gallery_block_list() {
+  $sql = db_query("SELECT nid FROM {cb_gallery_parents};");
+  $items = array();
+  while ($data = db_fetch_object($sql)) {
+    $items[] = node_load($data->nid);
+  }
+  return $items;
+}
 
+/**
+ * Implimentation of hook_block()
+ * 1. Add cb_gallery nodes as blocks within the drupal system.
+ * 2. Load the correct content into the blocks, when viewed.
+ */
+function cb_gallery_block($op = 'list', $delta = 0, $edit = array()) {
+	$block = array();
+  if ($op == 'list' && $cb_gallerys = _cb_gallery_block_list()) {
+    foreach ($cb_gallerys as $key => $cbNode) {
+      $block[$key]['info'] = t('CB_Gallery:' . $cbNode->title);
+      $deltas[$key] = $cbNode->nid;
+    }
+    variable_set('cb_gallery', $deltas, array());
+  } else if ($op == 'view' && $deltas = variable_get('cb_gallery', array())) {
+    drupal_add_css(drupal_get_path('module', 'cb_gallery') . '/css/cb_gallery.css');
+    foreach ($deltas as $key => $nid) {
+      if ($key == $delta) {
+        $cb_gallery_node = node_load($nid);
+        $cb_gallery_node->cb_gallery = _get_cb_gallery_info($nid, NULL);
+        // We must calculate ourselves, is the relative height of thumbnails
+        // based on their aspect ration and constrained widths.
+        switch($cb_gallery_node->cb_gallery['gallery_info']['thumbnail_aspect_ratio']) {
+            case "4:3":
+            $cb_gallery_node->cb_gallery['gallery_info']['thumbnail_height'] = ceil($cb_gallery_node->cb_gallery['gallery_info']['thumbnail_width'] / (4/3));
+            break;
+          case "16:9":
+            $cb_gallery_node->cb_gallery['gallery_info']['thumbnail_height'] = ceil($cb_gallery_node->cb_gallery['gallery_info']['thumbnail_width'] / (16/9));
+            break;
+          case "1:1":
+            $cb_gallery_node->cb_gallery['gallery_info']['thumbnail_height'] = $cb_gallery_node->cb_gallery['gallery_info']['thumbnail_width'];
+            break;
+        }
+        
+        
+        
+        if ($cb_gallery_node->status == 1) {
+          $block['subject'] = t('!title', array(
+            '!title' => $cb_gallery_node->title
+          ));
+          // Pass node to theme
+          $block['content'] = theme('cb_gallery_block', $cb_gallery_node);
+        }
+      }
+    }
+    //dsm($block);
+  }
+  return $block;
+}
+/**
+ * I have no idea what this function does.
+ * I am guessing that it adds the block template to the theme registery?
+ */
+function cb_gallery_theme($existing, $type, $theme, $path) {
+  return array(
+    'cb_gallery_block' => array(
+      'arguments' => array(
+        'node' => new stdClass()
+      ),
+      'template' => 'cb_gallery_block',
+      'file' => 'theme.inc',
+      'path' => drupal_get_path('module', 'cb_gallery') . '/theme'
+    )
+  );
+}
 
 
 function cb_gallery_node_info() {

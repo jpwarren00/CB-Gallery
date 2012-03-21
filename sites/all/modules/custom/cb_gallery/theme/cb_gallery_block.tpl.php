@@ -1,38 +1,39 @@
 <?php
 /**
  * @file
- * This tpl file is used to theme the cb_gallery nodes.
+ * This tpl file is used to theme the cb_gallery blocks.
  * Unique variables available are:
- * $cb_gallery : This contains the cb_gallery data
+ * $node->cb_gallery : This contains the cb_gallery data
  *                     for the node being viewed.
  */
+ 
 // Begin by wrapping everything in a div.
 $render='<div class="cb_gallery_node">';
 // If we are using viewport, include it here.
-if($cb_gallery['gallery_info']['viewport_shadowbox'] === 'viewport') {
+if($node->cb_gallery['gallery_info']['viewport_shadowbox'] === 'viewport') {
   $render .= '<div class="viewport">viewport</div>';
 }
 // First we check if media exists at all.
-if(isset($cb_gallery['media'])) {
+if(isset($node->cb_gallery['media'])) {
   
   $render .= '<ul class="thumbport clearfix">';
   
   // Then we loop through the images within the gallery.
-  foreach($cb_gallery['media'] as $media) {
+  foreach($node->cb_gallery['media'] as $media) {
     
     $render .= '<li>';
-    $render .= '<p style="height:'.$cb_gallery['gallery_info']['thumbnail_height'].'px">';
+    $render .= '<p style="height:'.$node->cb_gallery['gallery_info']['thumbnail_height'].'px">';
     
     // If we are using a shadowbox, we need to add the link here.
-    if($cb_gallery['gallery_info']['viewport_shadowbox'] == 'shadowbox'){
+    if($node->cb_gallery['gallery_info']['viewport_shadowbox'] == 'shadowbox'){
       $render .= '<a href="'.$media['media_content'].'" rel="shadowbox['.$node->nid.'];" title="'.$media['media_caption'].'" onclick="return false;">';
     }
     
     // Add the thumbnail image.
-    $render .= '<img src="'.$media['thumbnail_path'].'" style="width:'.$cb_gallery['gallery_info']['thumbnail_width'].'px"/>';
+    $render .= '<img src="'.$media['thumbnail_path'].'" style="width:'.$node->cb_gallery['gallery_info']['thumbnail_width'].'px"/>';
     
     // Close the <a> tag if we are using a shadowbox.
-    if($cb_gallery['gallery_info']['viewport_shadowbox'] == 'shadowbox') {
+    if($node->cb_gallery['gallery_info']['viewport_shadowbox'] == 'shadowbox') {
       $render .= '</a>';
     }
     
