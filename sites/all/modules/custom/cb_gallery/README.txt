@@ -1,1 +1,2 @@
-What chu want a conflict ESSAY?
+This is a README for cb_gallery...
+Boosh!
