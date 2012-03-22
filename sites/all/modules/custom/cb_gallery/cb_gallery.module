@@ -1,23 +1,20 @@
 <?php
 //$Id$
 /**
+ * @file
  * Collegeboard Gallery Module / Thumbgrid
  * 
  * Author: Dean Shelton
  * Build Date: 03-2012
  * Description:
- *    Allow content editors to create gallerys of local images, remote images, and video embeds
- *    The gallery will check for Shadowbox.
- *
+ *    Allow content editors to create gallerys of local images, remote images,
+ *    and video embeds.
  */
 
  /**
-  * Implimentation of hook_menu();
+  * Implements hook_menu().
   */
 function cb_gallery_menu() {
-  /**
-   * Listen for AJAX calls
-   */
   $items['admin/cb_gallery_ajax/update_gallery'] = array(
     'page callback' => 'cb_gallery_ajax_update_gallery',
     'type' => MENU_CALLBACK, 
@@ -26,52 +23,44 @@ function cb_gallery_menu() {
   $items['admin/cb_gallery_ajax/media_processing/%'] = array(
     'page callback' => '_media_processing',
     'type' => MENU_CALLBACK, 
-    'page arguments' => array(3), // Pass serial data from URL to page function as an argument.
+    'page arguments' => array(3), // Pass serial data as an argument.
     'access arguments' => array('access content js'),
     );
-  
   $items['admin/cb_gallery_ajax/change_sort_order/%'] = array(
     'page callback' => 'cb_gallery_ajax_change_sort_order',
     'type' => MENU_CALLBACK, 
-    'page arguments' => array(3), // Pass serial data from URL to page function as an argument.
+    'page arguments' => array(3), // Pass serial data as an argument.
     'access arguments' => array('access content js'),
     );
-  
   $items['admin/cb_gallery_ajax/%/delete_media'] = array(
     'page callback' => 'cb_gallery_ajax_delete_media',
     'type' => MENU_CALLBACK, 
-    'page arguments' => array(2), // Pass serial data from URL to page function as an argument.
+    'page arguments' => array(2), // Pass serial data as an argument.
     'access arguments' => array('access content js'),
     );
-  
   $items['admin/cb_gallery_ajax/%/edit_media'] = array(
     'page callback' => 'cb_gallery_ajax_edit_media',
     'type' => MENU_CALLBACK, 
-    'page arguments' => array(2), // Pass serial data from URL to page function as an argument.
+    'page arguments' => array(2), // Pass serial data as an argument.
     'access arguments' => array('access content js'),
     );
-  
-  /**
-   * Listen for Gallery edit requests
-   */
   $items['admin/cb_gallery/%/edit'] = array( // Edit
     'title'=> 'Edit an Existing CB Gallery!',
     'page callback' =>'cb_gallery_edit_page',
-    'page arguments' => array(2), // Pass %nid% from URL to page function as an argument.
+    'page arguments' => array(2), // Pass %nid% as an argument.
     'access arguments' => array('access content')
     );
-  
-  
   return $items;
 }
 
 /**
- * @cb_gallery_ajax_edit_media($media_id)
+ * cb_gallery_ajax_edit_media($media_id)
  * MASTER - CALLED ASYNCHRONOUSLY.
  * Args: [int] media_id : (required)
  * Returns: JSON object containing all child media information.
  * Description:
- * Used my Admin GUI to populate the form data for easy editing/cloning of existing media.
+ * Used my Admin GUI to populate the form data for easy editing/cloning of
+ * existing media.
  */
 function cb_gallery_ajax_edit_media($media_id) {
   $sql = "SELECT media_name, media_content, media_caption, thumbnail_path, media_type, media_sort_order
@@ -81,7 +70,6 @@ function cb_gallery_ajax_edit_media($media_id) {
   $result = db_query($sql,$args);
   $row = db_fetch_object($result);
   return drupal_json($row);
-  
 }
 /**
  * @cb_gallery_ajax_change_sort_order($args)
@@ -90,17 +78,20 @@ function cb_gallery_ajax_edit_media($media_id) {
  * This function is called by the admin GUI to save
  * the new sort-order of the gallery children.
  * Args:
- *     [string] args : (required) The peoperly structured string containing all gallery_child sort_order information.
- *     See Javascript sortable('drop') event for more details on the required structure of the string.
+ *     [string] args : (required) The peoperly structured string containing
+ *     all gallery_child sort_order information.
+ *     See Javascript sortable('drop') event for more details on the required
+ *     structure of the string.
  */
 function cb_gallery_ajax_change_sort_order($args) {
   
   // The Gallery ID is the first element in the string and must be seperated to
-  // create a loopable array of gallery images for SQL to reorder these children properly.
+  // create a loopable array of gallery images for SQL to reorder these children
+  // properly.
   // I hate usoing explode... Open to suggestions on smarter way to do this.
   $args = explode("-",$args);
   $nid  = $args[0];// save the $nid so we can remove it from this array.
-  $sqls = array(); // prep the SQL array (we will be calling multiple update querys)
+  $sqls = array(); // prep the SQL array (we will call multiple update querys)
   $i=0;            // prep the iterator.
   array_shift($args);// Remove the NID from the array of child elements.
   
@@ -108,12 +99,13 @@ function cb_gallery_ajax_change_sort_order($args) {
   // we can loop through and craete the SQL needed to reorder them.
   // All of the arguments are in order, so the iterator will represent
   // the new sort_order as we loop.
-  foreach($args as $media_id){
+  foreach($args as $media_id) {
     $sql = "UPDATE {cb_gallery_children} SET media_sort_order = '%d' WHERE media_id = '%d';";
     $sql_args = array($i,$media_id,$nid);
-    
-    if(!db_query($sql,$sql_args)){ // call each query, hunting for errors. If there is an error, we stop.
-      // This will only happen if the GUI is trying to update a media_id that does not exist.
+    // call each query, hunting for errors. If there is an error, we stop.
+    if(!db_query($sql,$sql_args)) { 
+      // This will only happen if the GUI is trying to update a media_id that
+      // does not exist.
       return drupal_json(array('message_class'=>'error', 'message'=>'Oh no! There was a problem adjusting the sort order of this gallery.'));
       // TODO: Handle the failure in a better way.
     }
@@ -121,7 +113,6 @@ function cb_gallery_ajax_change_sort_order($args) {
   }
   return drupal_json(array('message_class'=>'status', 'message'=>'The new order of these items has been saved.'));
 }
-
 /**
  * @cb_gallery_ajax_delete_media()
  * MASTER - CALLED ASYNCHRONOUSLY.
@@ -132,7 +123,7 @@ function cb_gallery_ajax_change_sort_order($args) {
 function cb_gallery_ajax_delete_media($media_id) {
   $sql = "DELETE FROM {cb_gallery_children} WHERE media_id = '%d';";
   $sql_args = array($media_id);
-  if(!db_query($sql,$sql_args)){
+  if(!db_query($sql,$sql_args)) {
       return drupal_json(array('message_class'=>'error', 'message'=>'Oh no! There was a problem removing this media.'));
     }
   return drupal_json(array('message_class'=>'status', 'message'=>'Media has been successfully removed.'));
@@ -151,14 +142,12 @@ function cb_gallery_ajax_update_gallery($nid) {
     'thumbnail_width' =>FILTER_SANITIZE_NUMBER_INT,
     'unique_css_block_class' => FILTER_SANITIZE_SPECIAL_CHARS
   );
-  
   $clean = filter_input_array(INPUT_POST,$args);
   array_push($clean,$nid); // add the galleryID last.
   $sql    = "UPDATE {cb_gallery_parents} SET thumbnail_aspect_ratio='%s', viewport_shadowbox='%s', thumbnail_width='%s', unique_css_block_class='%s' WHERE nid = '%d';";
   db_query($sql, $clean); 
   return drupal_json(array('status' => TRUE, 'data' => '<div class="status">Gallery info saved</div>'));
 }
-
 /**
  * @_get_cb_gallery_info($nid, $single_new_item = NULL)
  * CAN BE USED ASYNCHRONOUSLY.
@@ -192,23 +181,25 @@ function _get_cb_gallery_info($nid, $single_new_item = NULL) {
   // one element.
   if(isset($single_new_item) && is_numeric($single_new_item)) {
     $sql .= " AND cb_gallery_children.media_id ='%d'";
-    array_push($args,$single_new_item);// add the arg required to limit this query to a single result.
+    // Add the arg required to limit this query to a single result.
+    array_push($args,$single_new_item);
   }
   // Finish up the SQL and call the query.
   $sql .= " ORDER BY cb_gallery_children.media_sort_order;";
   $result = db_query($sql, $args);
   
-  $i = 0;// set the iterator as the media[index][]
+  $i = 0;// set the iterator as the media index.
   while($row = db_fetch_object($result)) {
     if(!empty($row->thumbnail_aspect_ratio)) {
       // Gallery data simply overwrites itself during iteration.
-      // We may return gallery data with no child data, if this is an empty gallery.
+      // We may return gallery data with no child data, if this is an empty
+      // gallery.
       $return['gallery_info']['thumbnail_aspect_ratio']=$row->thumbnail_aspect_ratio;
       $return['gallery_info']['viewport_shadowbox']=$row->viewport_shadowbox;
       $return['gallery_info']['unique_css_block_class']=$row->unique_css_block_class;
       $return['gallery_info']['thumbnail_width']=$row->thumbnail_width;
     }
-      // Media data grows during iteration.
+    // Media data grows during iteration.
     if(!empty($row->media_id)) {
       $return['media'][$i]['media_id']=$row->media_id;
       $return['media'][$i]['media_name']=$row->media_name;
@@ -220,16 +211,19 @@ function _get_cb_gallery_info($nid, $single_new_item = NULL) {
       $i++;
     }
   }
-  return (isset($return) ? $return : FALSE ); // Return FALSE by default, otherwise a structured gallery_info array
+  // Return FALSE by default, otherwise a structured gallery_info array.
+  return (isset($return) ? $return : FALSE ); 
 }
-
 /**
  * @cb_help_function
  * CHILD - Used ASYNCHRONOUSLY
  * Used to render sortable gallery objects as HTML.
- * Args: [int] nid : (required) The nid of the gallery to which the elements belong
- *       [array] gallery_info : (optional) The structured array of gallery info containing all gallery data.
- *       [int] single_new_item : (optional) If only one new element is being produced, give it's media_id
+ * Args: [int] nid : (required) The nid of the gallery to which the elements
+ *                    belong.
+ *       [array] gallery_info : (optional) The structured array of gallery info
+ *                              containing all gallery data.
+ *       [int] single_new_item : (optional) If only one new element is being
+ *                               produced, give it's media_id
  */
 function _render_gallery_gui_elements($nid, $gallery_info = NULL, $single_new_item = NULL) {
   
@@ -241,15 +235,13 @@ function _render_gallery_gui_elements($nid, $gallery_info = NULL, $single_new_it
   if($gallery_info === NULL){
     $gallery_info = _get_cb_gallery_info($nid, $single_new_item); 
   }
-  
   if($gallery_info === FALSE){
     // This gallery does not exist! This should not happen often/ever.
     // TODO: fail better.
     drupal_set_message('The gallery you requested does not exist. This usually happens when you are attenpting to edit a recently deleted gallery.','error');
   }
-  
   if(!isset($gallery_info['media'])) {
-    // This gallery is empty
+    // This gallery is empty.
     $reorder_gallery_gui .= '<div class="empty">This CB Gallery is EMPTY.</div>';
   }else{
     // This gallery has child elements!
@@ -258,13 +250,11 @@ function _render_gallery_gui_elements($nid, $gallery_info = NULL, $single_new_it
     $reorder_gallery_gui='';  // Prep the string for the loop.
     $i=0;                     // Set iterator for odd/even classes.
     foreach($gallery_info['media'] as $media) {// and we're off...
-      
       // For display purposes, we will truncate the strings here
       // so that the text will fit in the smallest possible area
       // allowed in the CSS.
       $media_name     = (isset($row->media_name) ? truncate_utf8($row->media_name, 58, FALSE, TRUE) : ''); 
       $media_caption  = (!empty($row->media_caption) ? truncate_utf8($row->media_caption, 90, FALSE, TRUE) : 'No Caption');
-      
       // Here is the template for the sortable gallery images.
       // I did not see a reason to pass this to the themeing layer,
       // as it's look and feel is strictly administrative.
@@ -294,8 +284,7 @@ function _render_gallery_gui_elements($nid, $gallery_info = NULL, $single_new_it
  *  $_POST data (required)
  *  Args: [int] gallery_id : (required) the gallery nid to associate the new $_POSTed media to.
  */
-function _media_processing($gallery_nid){
-  
+function _media_processing($gallery_nid) {
   // Sanitize input array using PHP filters.
   $post_filter_args = array(
     'title'            =>FILTER_SANITIZE_SPECIAL_CHARS,
@@ -305,22 +294,20 @@ function _media_processing($gallery_nid){
     'media_type'              =>FILTER_SANITIZE_SPECIAL_CHARS,
     'media_caption'           =>FILTER_SANITIZE_SPECIAL_CHARS,
     'thumbnail_path'          =>FILTER_SANITIZE_SPECIAL_CHARS,
-    'video_embed_code'        =>FILTER_SANITIZE_MAGIC_QUOTES,   // this is an EMBED code. It will contain HTML.
+    'video_embed_code'        =>FILTER_SANITIZE_MAGIC_QUOTES,   
     'remote_image'            =>FILTER_SANITIZE_URL,
-    'edit_media_id'           =>FILTER_SANITIZE_NUMBER_INT
+    'edit_media_id'           =>FILTER_SANITIZE_NUMBER_INT,
   );
   $clean = filter_input_array(INPUT_POST, $post_filter_args);
-  
-  $media_id = (empty($clean['edit_media_id']) ? FALSE : $clean['edit_media_id']);  // Set edit_media to FALSE if not set, or being manipulated.
-  $gallery_nid = (!is_numeric($gallery_nid) ? FALSE : $gallery_nid);                    // Sanatize gallery_id
-  
+  // Set edit_media to FALSE if not set, or being manipulated.
+  $media_id = (empty($clean['edit_media_id']) ? FALSE : $clean['edit_media_id']);
+  // Sanatize gallery_id
+  $gallery_nid = (!is_numeric($gallery_nid) ? FALSE : $gallery_nid);                    
   $clean['media_content'] = ($clean['media_type'] == 'video' ? $clean['video_embed_code'] : $clean['remote_image']);
-  
   // Media is being Edited with the ADMIN GUI
   if($media_id !== FALSE ) {
     $sql = "UPDATE {cb_gallery_children} SET media_name = '%s',media_content = '%s',thumbnail_path = '%s',media_caption = '%s',media_type = '%s' WHERE media_id = '%d'";
     $args = array($clean['media_name'], $clean['media_content'], $clean['thumbnail_path'], $clean['media_caption'], $clean['media_type'], $media_id);
-    
     // We need to send the new/edited media element back to
     // the admin GUI for display to the user. To do this, we
     // must return the new data as JSON.  In this case, we
@@ -333,11 +320,10 @@ function _media_processing($gallery_nid){
       // Render result data
       $message = array('message_class'=>'error','message'=>t('There was a problem updating this media.'));
     }
-    $return_media_json = array('return_media' => _render_gallery_gui_elements($gallery_nid, NULL, $media_id)); // Return HTML of single element.
+    // Return HTML of single element.
+    $return_media_json = array('return_media' => _render_gallery_gui_elements($gallery_nid, NULL, $media_id)); 
     $message = array('message_class'=>'status','message'=>t('Media has been updated.'));
-    
   }else{  // Media is being Inserted through the admin GUI.
-    
     $sql = "INSERT INTO {cb_gallery_children} (media_name, media_content, thumbnail_path, media_caption, media_type, nid) VALUES ('%s', '%s', '%s', '%s', '%s','%d');";
     $args = array($clean['media_name'], $clean['media_content'], $clean['thumbnail_path'], $clean['media_caption'], $clean['media_type'],$gallery_nid);
     
@@ -353,17 +339,19 @@ function _media_processing($gallery_nid){
      // To render proper HTML, we MUST know the new media's media_id.
      // it DOES require an additional query... But I can not think of
      // another way around this at the moment.
-    $sql_getHTMLforGUI = "SELECT media_id FROM {cb_gallery_children} ORDER BY media_id DESC LIMIT 1;"; // Pull the newest media_id.
+
+     // Pull the newest media_id.
+    $sql_getHTMLforGUI = "SELECT media_id FROM {cb_gallery_children} ORDER BY media_id DESC LIMIT 1;"; 
     $row = db_fetch_object(db_query($sql_getHTMLforGUI));
-    $return_media_json = array('return_media' => _render_gallery_gui_elements($gallery_nid, NULL, $row->media_id)); // Return HTML of single element.
+    // Return HTML of single element.
+    $return_media_json = array('return_media' => _render_gallery_gui_elements($gallery_nid, NULL, $row->media_id)); 
   }
-  array_push($message, $return_media_json); // Add the new/edited media to the return JSON object.
+  // Add the new/edited media to the return JSON object.
+  array_push($message, $return_media_json); 
   return drupal_json($message);
 }
-
-
 /**
- * Implimentation of HOOK_form();
+ * Implements HOOK_form();
  */
 function cb_gallery_form($node, $form_state) {
   
@@ -606,7 +594,7 @@ function cb_gallery_theme_registry_alter(&$registry) {
   array_unshift($registry['node']['theme paths'], drupal_get_path('module', 'cb_gallery') . '/theme');
 }
 /**
- * Implimentation of hook_nodeapi()
+ * Implements hook_nodeapi()
  */
 function cb_gallery_nodeapi(&$node, $op, $a3 = NULL, $a4 = NULL){
   switch ($op){
@@ -683,7 +671,7 @@ function _cb_gallery_block_list() {
 }
 
 /**
- * Implimentation of hook_block()
+ * Implements hook_block()
  * 1. Add cb_gallery nodes as blocks within the drupal system.
  * 2. Load the correct content into the blocks, when viewed.
  */
@@ -714,8 +702,6 @@ function cb_gallery_block($op = 'list', $delta = 0, $edit = array()) {
             $cb_gallery_node->cb_gallery['gallery_info']['thumbnail_height'] = $cb_gallery_node->cb_gallery['gallery_info']['thumbnail_width'];
             break;
         }
-        
-        
         
         if ($cb_gallery_node->status == 1) {
           $block['subject'] = t('!title', array(
