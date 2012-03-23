@@ -17,14 +17,20 @@ if(isset($cb_gallery['media'])) {
   
   $render .= '<ul class="thumbport clearfix">';
   
-  // Then we loop through the images within the gallery.
+ // Then we loop through the images within the gallery.
   foreach($cb_gallery['media'] as $media) {
-    
+    // If this is a video, we will render it's iframe to a hidden div on the
+    // page.
+    if($media['media_type'] == 'video') {
+      $render .= '<div id="cb_video_embed_'.$media['media_id'].'" style="display:none;">'.$media['media_content'].'</div>';
+      // Set media_content to the ID of the hidden embed.
+      $media['media_content'] = '#cb_video_embed_'.$media['media_id'];
+    }
     $render .= '<li>';
     $render .= '<p style="height:'.$cb_gallery['gallery_info']['thumbnail_height'].'px">';
     
     // If we are using a shadowbox, we need to add the link here.
-    if($cb_gallery['gallery_info']['viewport_shadowbox'] == 'shadowbox'){
+    if($node->cb_gallery['gallery_info']['viewport_shadowbox'] == 'shadowbox'){
       $render .= '<a href="'.$media['media_content'].'" rel="shadowbox['.$node->nid.'];" title="'.$media['media_caption'].'" onclick="return false;">';
     }
     
