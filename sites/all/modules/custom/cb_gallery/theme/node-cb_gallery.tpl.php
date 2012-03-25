@@ -11,7 +11,7 @@
 $default_vid_width = 853;
 $default_vid_height =  480;
 $media_feature_type = $cb_gallery['gallery_info']['viewport_shadowbox']; // cut down on code.
-
+$img_index = 0;
 $viewport_content = ($media_feature_type == 'viewport' ? '' : NULL);
 $thumbport_content =  (isset($cb_gallery['media']) ? '' : NULL);
 
@@ -83,7 +83,7 @@ if(isset($cb_gallery['media'])) {
           
           // Here is the opening A tag used to feature this this image inside
           // of the nivo-gallery.
-          $opening_a_tag = '<a href="' . $media_content . '" rel="viewport" title="' . $media_caption . '" onclick="return false;">';
+          $opening_a_tag = '<a href="' . $media_content . '" class="viewport_trigger" rel="' . $img_index . '" title="' . $media_caption . '" onclick="return false;">';
         break;
         case 'shadowbox':
         // IMAGE IN SHADOWBOX
@@ -101,12 +101,14 @@ if(isset($cb_gallery['media'])) {
     $thumbport_content .= '</a>';
     $thumbport_content .= '</p>';
     $thumbport_content .= '</li>';
+    $img_index++;
   }
 }
 
-$render ='<div class="cb_gallery_node">'; 
+$css = ' ' . $cb_gallery['gallery_info']['unique_css_block_class'];
+$render ='<div class="cb_gallery_node' . $css . '">'; 
 if(isset($viewport_content)) {
-  $render .= '<div id="gallery123" class="nivoGallery"><ul>'; 
+  $render .= '<div class="nivoGallery"><ul>'; 
   $render .= $viewport_content;
   $render .= '</ul></div>';
 }

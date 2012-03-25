@@ -379,7 +379,7 @@ function cb_gallery_form($node, $form_state) {
       <div id="preview_wrapper" class="clearfix">
         <h2>Layout Preview</h2>
         <div id="viewport">
-          <p>Viewport</p>
+          <p>Viewport. <br/>(Height not adjusted in live preview.)</p>
         </div>
         <div id="thumb_port" class="clearfix">
           <ul>
@@ -636,10 +636,10 @@ function cb_gallery_preprocess_node(&$variables) {
   // Incase someone is viewing this node as a node we must format it and preprocess.
   drupal_add_css(drupal_get_path('module', 'cb_gallery') . '/css/cb_gallery.css');
   drupal_add_js(drupal_get_path('module', 'cb_gallery') . '/js/cb_gallery.js');
-  
-  if($variables['cb_gallery']['gallery_info']['viewport_shadowbox'] == 'viewport') {
+  //TODO: confine the includes to only when needed.
     drupal_add_css(drupal_get_path('module', 'cb_gallery') . '/js/nivo-gallery/nivo-gallery.css');
     drupal_add_js(drupal_get_path('module', 'cb_gallery') . '/js/nivo-gallery/jquery.nivo.gallery.js');
+  if($variables['cb_gallery']['gallery_info']['viewport_shadowbox'] == 'viewport') {
   }
   
   // We must calculate ourselves, is the relative height of thumbnails

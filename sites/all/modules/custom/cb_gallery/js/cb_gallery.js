@@ -7,8 +7,13 @@
  $(function(){ // On Document Ready
     
     //Start the nivo gallery if exists.
-    $('#gallery123').nivoGallery();
-    
+    if($('.nivoGallery').length > 0){
+      $('.nivoGallery').nivoGallery();
+    }
+   $('.viewport_trigger').click(function(){
+      console.log($(this).parents('.thumbport').siblings('.nivoGallery').attr('class'));
+      $(this).parents('.thumbport').siblings('.nivoGallery').data('nivoGallery').goTo($(this).attr('rel'));
+   });
       // Event binding must be reapplied when new gellery items are created.
       // This function will register all gallery_reorder_gui events.
       resetEventBindings(); 
