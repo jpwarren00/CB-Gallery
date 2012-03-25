@@ -6,6 +6,9 @@
  */
  $(function(){ // On Document Ready
     
+    // Start the nivo gallery if exists.
+    $('#gallery').nivoGallery();
+    
       // Event binding must be reapplied when new gellery items are created.
       // This function will register all gallery_reorder_gui events.
       resetEventBindings(); 
@@ -60,9 +63,8 @@
         $('.video_fieldset').slideUp('slow'); // hide fieldsets
         
         // Clear all elements within this form.
-        $('#node-form :text, #edit-media-caption').not('#node-form .input_gallery_name, :hidden').val('');
-        $('input[name="media_type"]').attr('checked', false); // set all radio buttons to false.
-        $('#edit-edit-media-id').val('');//Remove that hidden form value!!
+        $('#node-form .input_image_name, #node-form .input_image_caption, #node-form .input_thumbnail_path, #edit-edit-media-id').val('');
+        $('input[name="media_type"]').attr('checked', false); 
         
         // Button Control
         $('.submit_edit_media_button').hide();// Show the SUBMIT EDITS button.
@@ -173,6 +175,7 @@
                      $('#my_cb_gallery .empty').fadeOut('slow',function(){$(this).remove();}); // remove empty placeholder if it exists
                      resetEditFormFields(); // Clear out the form
                      resetEventBindings(); // Reset the jquery event bindings to include the newly added DOM element.
+                     console.log('reset');
                   } 
                }
           });
@@ -189,7 +192,6 @@
      * with the DOM.
      */
     function resetEventBindings(){
-        console.log($(this).callee);
     //Implimentation of jQuery Sortable()
     if($('#my_cb_gallery > div').length > 1) { // Only allow sort if there is MORE than one media element in the gallery.
         $('#my_cb_gallery').sortable({

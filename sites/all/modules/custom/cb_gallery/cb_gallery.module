@@ -402,7 +402,7 @@ function cb_gallery_form($node, $form_state) {
   $form['gallery_info']['thumbnail_aspect_ratio'] = array(
     '#title'=> t('Thumbnail Aspect Ratio'),
     '#type'=> 'radios',
-    '#options' => array('4:3'=>'4:3.', '16:9'=>'16:9.', '1:1'=>'1:1. (Square Grid)'),
+    '#options' => array('4:3'=>'4:3.', '16:9'=>'16:9.', '1:1'=>'1:1. (Square Grid)'), //TODO: Add "Custom" with new textfield for height.
     '#default_value'=> (isset($gallery_info['gallery_info']['thumbnail_aspect_ratio']) ? $gallery_info['gallery_info']['thumbnail_aspect_ratio']: '16:9'),
     '#description' => t('The aspect ratio of thumbnail images.'),
     '#attributes' => array('class' =>'input_thumbnail_ratio'),
@@ -607,8 +607,8 @@ function cb_gallery_nodeapi(&$node, $op, $a3 = NULL, $a4 = NULL){
       $args = array($node->nid);
       db_query($sql,$args);
       
-      $sql  = "INSERT INTO {cb_gallery_parents} (nid, thumbnail_aspect_ratio, viewport_shadowbox, thumbnail_width) VALUES ('%d','%s','%s', '%s');";
-      $args = array($node->nid, $node->thumbnail_aspect_ratio, $node->viewport_shadowbox, $node->thumbnail_width);
+      $sql  = "INSERT INTO {cb_gallery_parents} (nid, thumbnail_aspect_ratio, viewport_shadowbox, thumbnail_width, unique_css_block_class) VALUES ('%d','%s','%s', '%s', '%s');";
+      $args = array($node->nid, $node->thumbnail_aspect_ratio, $node->viewport_shadowbox, $node->thumbnail_width, $node->unique_css_block_class);
       db_query($sql,$args);
     break;
     case "view":
@@ -625,9 +625,6 @@ function cb_gallery_nodeapi(&$node, $op, $a3 = NULL, $a4 = NULL){
  * templates, but a higher priority than a generic node.tpl.php.
  */
 function cb_gallery_preprocess_node(&$variables) {
-  // Incase someone is viewing this node as a node we must format it and preprocess.
-  drupal_add_css(drupal_get_path('module', 'cb_gallery') . '/css/cb_gallery.css');
-  drupal_add_js(drupal_get_path('module', 'cb_gallery') . '/js/cb_gallery.js');
   
   if ($variables['node']->cb_gallery) {
     array_unshift($variables['template_files'], 'node-cb_gallery');
@@ -635,6 +632,15 @@ function cb_gallery_preprocess_node(&$variables) {
   
   // Grab the gallery data.
   $variables['cb_gallery'] = _get_cb_gallery_info($variables['nid'], $single_new_item = NULL);
+  
+  // Incase someone is viewing this node as a node we must format it and preprocess.
+  drupal_add_css(drupal_get_path('module', 'cb_gallery') . '/css/cb_gallery.css');
+  drupal_add_css(drupal_get_path('module', 'cb_gallery') . '/css/cb_gallery.js');
+  if($variables['cb_gallery']['gallery_info']['viewport_shadowbox'] == 'viewport') {
+    drupal_add_css(drupal_get_path('module', 'cb_gallery') . '/js/nivo-gallery/nivo-gallery.css');
+    drupal_add_js(drupal_get_path('module', 'cb_gallery') . '/js/nivo-gallery/jquery.nivo.gallery.min.js');
+  }
+  
   // We must calculate ourselves, is the relative height of thumbnails
   // based on their aspect ration and constrained widths.
   switch($variables['cb_gallery']['gallery_info']['thumbnail_aspect_ratio']) {

@@ -1,5 +1,5 @@
 <?php
-
+//TODO: Add uninstall function to remove all nodes registerd with this nodetype.
 function cb_gallery_schema() {
   $schema = array();
   // Gallery Names
