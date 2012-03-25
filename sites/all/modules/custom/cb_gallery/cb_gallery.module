@@ -635,10 +635,11 @@ function cb_gallery_preprocess_node(&$variables) {
   
   // Incase someone is viewing this node as a node we must format it and preprocess.
   drupal_add_css(drupal_get_path('module', 'cb_gallery') . '/css/cb_gallery.css');
-  drupal_add_css(drupal_get_path('module', 'cb_gallery') . '/css/cb_gallery.js');
+  drupal_add_js(drupal_get_path('module', 'cb_gallery') . '/js/cb_gallery.js');
+  
   if($variables['cb_gallery']['gallery_info']['viewport_shadowbox'] == 'viewport') {
     drupal_add_css(drupal_get_path('module', 'cb_gallery') . '/js/nivo-gallery/nivo-gallery.css');
-    drupal_add_js(drupal_get_path('module', 'cb_gallery') . '/js/nivo-gallery/jquery.nivo.gallery.min.js');
+    drupal_add_js(drupal_get_path('module', 'cb_gallery') . '/js/nivo-gallery/jquery.nivo.gallery.js');
   }
   
   // We must calculate ourselves, is the relative height of thumbnails

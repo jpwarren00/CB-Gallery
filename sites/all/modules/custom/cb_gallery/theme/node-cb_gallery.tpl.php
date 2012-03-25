@@ -106,7 +106,7 @@ if(isset($cb_gallery['media'])) {
 
 $render ='<div class="cb_gallery_node">'; 
 if(isset($viewport_content)) {
-  $render .= '<div id="gallery" class="nivoGallery"><ul>'; 
+  $render .= '<div id="gallery123" class="nivoGallery"><ul>'; 
   $render .= $viewport_content;
   $render .= '</ul></div>';
 }

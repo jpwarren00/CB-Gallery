@@ -6,8 +6,6 @@
  */
  $(function(){ // On Document Ready
     
-    // Start the nivo gallery if exists.
-    $('#gallery').nivoGallery();
     
       // Event binding must be reapplied when new gellery items are created.
       // This function will register all gallery_reorder_gui events.
@@ -294,4 +292,7 @@
            $('.image_fieldset').slideDown(); 
         });
     });
+    
+    // Start the nivo gallery if exists.
+    $('.nivoGallery').nivoGallery();
 });
