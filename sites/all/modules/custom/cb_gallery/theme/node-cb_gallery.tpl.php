@@ -53,14 +53,14 @@ if(isset($cb_gallery['media'])) {
               }
               $viewport_content .= '</video>';
             }else{
-              $viewport_content .= $media_content; // Add full HTML embed here.
+              $viewport_content .= stripslashes($media_content); // Add full HTML embed here.
             }
             $viewport_content .= '</li>';
             
             // The link for the thumbnail used to FEATURE this video will be
             // different than if we were using shadowbox.
             // Here is the opening A tag to add navigation to nivo gallery
-            $opening_a_tag = '<a href="no-path" rel="media_id_' . $media_id . '" class="viewport_thumbnail_link" onclick="return false;">';
+            $opening_a_tag = '<a href="#" class="viewport_trigger video" rel="' . $img_index . '" title="' . $media_caption . '" onclick="return false;">';
           break;
           case 'shadowbox':
           // VIDEO IN SHADOWBOX

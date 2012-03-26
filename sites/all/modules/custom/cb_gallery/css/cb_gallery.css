@@ -209,5 +209,8 @@ div.cb_gallery_node.boosh .nivoGallery{
 	height: 290px;
 }
 div.cb_gallery_node.boosh{
-  width: 676px;
+  /*width: 515px;*/
+}
+a.viewport_trigger.video{
+	
 }

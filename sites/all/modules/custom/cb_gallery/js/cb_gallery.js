@@ -8,11 +8,11 @@
     
     //Start the nivo gallery if exists.
     if($('.nivoGallery').length > 0){
-      $('.nivoGallery').nivoGallery();
+     //$('.nivoGallery').nivoGallery();
     }
    $('.viewport_trigger').click(function(){
-      console.log($(this).parents('.thumbport').siblings('.nivoGallery').attr('class'));
-      $(this).parents('.thumbport').siblings('.nivoGallery').data('nivoGallery').goTo($(this).attr('rel'));
+      
+      $(this).parents('.thumbport').siblings('.nivoGallery').data('nivoGallery').goTo(Number($(this).attr('rel')));
    });
       // Event binding must be reapplied when new gellery items are created.
       // This function will register all gallery_reorder_gui events.
@@ -255,15 +255,16 @@
                               $('.new_media_fieldset')
                                 .removeClass('collapsed')
                                 .addClass('being_cloned');
-                             $('> div:not(.action)', $('.new_media_fieldset')).slideDown();
+                            // $('> div:not(.action)', $('.new_media_fieldset')).slideDown();
                              $('.input_image_name').focus();
                       }
               );
       });
-      
+      var delqueue = Array();
    // Delete Binding
-    $('.media_delete').click(function(obj){
-        
+    $('.media_delete').click(function(){
+      if(!$.inArray($(this).attr('href'), delqueue)){
+        console.log('DELETE clicked');
         $(this).parents('.dragable').addClass('being_deleted');// add class to the gallery element being edited.
         
         if(confirm('Are you sure that you want to delete this gallery item?')){
@@ -281,7 +282,8 @@
                         set_cb_status({message:'Nothing was deleted. Whew! That was close, huh?', message_class:'status'});
                         
                     }
-      });      
+      }
+      });
     }
     
     

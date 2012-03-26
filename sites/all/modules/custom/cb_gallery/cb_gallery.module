@@ -69,6 +69,13 @@ function cb_gallery_ajax_edit_media($media_id) {
   $args = array($media_id);
   $result = db_query($sql,$args);
   $row = db_fetch_object($result);
+  
+  // For safety, $row->media_content is HTML encoded when saved in the database.
+  // Because of this, we must DEcode it to return the html content back to the
+  // json object. The add-slashes, and xss safety will be handeled by
+  // drupal_json();
+  $row->media_content = html_entity_decode($row->media_content);
+  // There we go. All ready for the return.
   return drupal_json($row);
 }
 /**
@@ -203,7 +210,7 @@ function _get_cb_gallery_info($nid, $single_new_item = NULL) {
     if(!empty($row->media_id)) {
       $return['media'][$i]['media_id']=$row->media_id;
       $return['media'][$i]['media_name']=$row->media_name;
-      $return['media'][$i]['media_content']=$row->media_content;
+      $return['media'][$i]['media_content']=html_entity_decode($row->media_content);
       $return['media'][$i]['media_caption']=$row->media_caption;
       $return['media'][$i]['thumbnail_path']=$row->thumbnail_path;
       $return['media'][$i]['media_sort_order']=$row->media_sort_order;
@@ -294,7 +301,8 @@ function _media_processing($gallery_nid) {
     'media_type'              =>FILTER_SANITIZE_SPECIAL_CHARS,
     'media_caption'           =>FILTER_SANITIZE_SPECIAL_CHARS,
     'thumbnail_path'          =>FILTER_SANITIZE_SPECIAL_CHARS,
-    'video_embed_code'        =>FILTER_SANITIZE_MAGIC_QUOTES,   
+    // Video Embed Codes are HTML encoded when save into the database.
+    'video_embed_code'        =>FILTER_SANITIZE_SPECIAL_CHARS,  
     'remote_image'            =>FILTER_SANITIZE_URL,
     'edit_media_id'           =>FILTER_SANITIZE_NUMBER_INT,
   );
@@ -312,7 +320,7 @@ function _media_processing($gallery_nid) {
     // the admin GUI for display to the user. To do this, we
     // must return the new data as JSON.  In this case, we
     // are EDITING, and already have that 'hard to get' media_id! :D
-    // No further SQL required.
+    // No further SQL SELECT's required.
     if(db_query($sql,$args)) {
       // Render result data.
       $message = array('message_class'=>'status','message'=>t('Media has been updated.'));
@@ -412,7 +420,7 @@ function cb_gallery_form($node, $form_state) {
   $form['gallery_info']['viewport_shadowbox'] = array(
     '#title'=> t('Media Highlight Style'),
     '#type'=> 'radios',
-    '#options' => array('shadowbox'=>'ShadowBox.', 'viewport'=>'Viewport.'),
+    '#options' => array('shadowbox'=>'ShadowBox.', 'viewport'=>'Nivo Gallery.'),
     '#description' => t('When thumbnails are clicked, you can choose to open a shadowbox, or display the media in a viewport.'),
     '#attributes' => array('class' =>'input_viewport_shadowbox'),
     '#default_value'=> (isset($gallery_info['gallery_info']['viewport_shadowbox']) ? $gallery_info['gallery_info']['viewport_shadowbox'] : 'viewport'),
@@ -510,14 +518,14 @@ function cb_gallery_form($node, $form_state) {
       '#title'=> t('Remote Image URL'),
       '#type'=> 'textfield',
       '#description' => t('Remote Image URL'),
-      '#attributes' => array('class' =>'input_remote_image')
+      '#attributes' => array('class' =>'input_remote_image'),
       );
       
     $form['new_media']['add_video']['video_embed_code'] = array(
       '#title'=> t('Video Embed Code'),
       '#type'=> 'textarea',
       '#description' => t('Paste your video embed code here.'),
-      '#attributes' => array('class' =>'input_video_embed_code')
+      '#attributes' => array('class' =>'input_video_embed_code'),
       );
       
     $form['new_media']['submit_edit_media'] = array(
