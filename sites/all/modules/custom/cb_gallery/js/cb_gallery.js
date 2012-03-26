@@ -8,7 +8,7 @@
     
     //Start the nivo gallery if exists.
     if($('.nivoGallery').length > 0){
-     //$('.nivoGallery').nivoGallery();
+     $('.nivoGallery').nivoGallery();
     }
    $('.viewport_trigger').click(function(){
       
@@ -263,8 +263,6 @@
       var delqueue = Array();
    // Delete Binding
     $('.media_delete').click(function(){
-      if(!$.inArray($(this).attr('href'), delqueue)){
-        console.log('DELETE clicked');
         $(this).parents('.dragable').addClass('being_deleted');// add class to the gallery element being edited.
         
         if(confirm('Are you sure that you want to delete this gallery item?')){
@@ -282,12 +280,8 @@
                         set_cb_status({message:'Nothing was deleted. Whew! That was close, huh?', message_class:'status'});
                         
                     }
-      }
       });
     }
-    
-    
-    
     
     $('.form-radios input[value=video]').click(function(){
         $('.image_fieldset').slideUp('slow',function(){

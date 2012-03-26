@@ -30,8 +30,12 @@ function cb_gallery_schema() {
       ),
       'unique_css_block_class' => array(
         'description' => t('CSS Class to put into the outermost div.'),
-        'type' => 'text'
-      )
+        'type' => 'text',
+      ),
+      'nivo_gallery_json' => array(
+        'description' => t('JSON used to configure the NIVO Gallery.'),
+        'type' => 'text',
+      ),
     ),
     'primary key' => array('nid')
   );
@@ -81,8 +85,8 @@ function cb_gallery_schema() {
         'description' => t('The order in which the gallery items are displayed.'),
         'type' => 'numeric',
         'precision' => 10,
-        'scale' => 0
-      )
+        'scale' => 0,
+      ),
     ),
     'primary key' => array('media_id')
   ); 
