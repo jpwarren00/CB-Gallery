@@ -1,2 +1,2 @@
-This is a README for cb_gallery...
-Boosh!
+This is the CB_Gallery Module, merged with the CB_Gallery Module.
+
