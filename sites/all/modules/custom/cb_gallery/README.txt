@@ -1,2 +1,2 @@
-This is the CB_Gallery Module, merged with the CB_Gallery Module.
-
+Please use version specific branch. 
+=> 6.x-1.0
