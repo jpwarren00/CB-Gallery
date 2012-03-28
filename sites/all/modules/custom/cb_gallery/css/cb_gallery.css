@@ -115,13 +115,13 @@ h3.gallery_title{
 #live_preview #preview_wrapper li, #live_preview #preview_wrapper div{
   border:1px solid #ccc;  
 }
-#live_preview #thumb_port li {
+#live_preview #thumbport li {
 	background:none;
 }
 #live_preview h2{
   margin:0px 0px 0px 7px;
 }
-#live_preview #thumb_port ul{
+#live_preview #thumbport ul{
   margin:0;
 }
 #live_preview #viewport{
@@ -131,11 +131,14 @@ h3.gallery_title{
 #live_preview.noViewport #viewport{
   display:none;
 }
+#live_preview.noThumbport #thumbport{
+  display:none;
+}
 
 /**
  *FourByThree 4:3 ratio
  */
-#live_preview.fourByThree #thumb_port li{
+#live_preview.fourByThree #thumbport li{
   padding:0;
   height: 25px;
   width: 33px;
@@ -153,10 +156,10 @@ h3.gallery_title{
 #live_preview #viewport {
   height: 84px;
 }
-#live_preview.sixteenByNine #thumb_port{
+#live_preview.sixteenByNine #thumbport{
   
 }
-#live_preview.sixteenByNine #thumb_port li{
+#live_preview.sixteenByNine #thumbport li{
   padding:0;
   height: 18px;
   width: 33px;
@@ -166,10 +169,10 @@ h3.gallery_title{
 /**
  *oneToOne 1:1 ratio
  */
-#live_preview.oneToOne #thumb_port{
+#live_preview.oneToOne #thumbport{
   
 }
-#live_preview.oneToOne #thumb_port li{
+#live_preview.oneToOne #thumbport li{
   padding:0;
   height: 33px;
   width: 33px;

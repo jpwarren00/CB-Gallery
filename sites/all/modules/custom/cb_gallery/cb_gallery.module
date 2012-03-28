@@ -411,7 +411,7 @@ function cb_gallery_form($node, $form_state) {
         <div id="viewport">
           <p>Viewport. <br/>(Height not adjusted in live preview.)</p>
         </div>
-        <div id="thumb_port" class="clearfix">
+        <div id="thumbport" class="clearfix">
           <ul>
             <li></li><li></li><li></li><li></li><li></li><li></li><li></li><li></li>
           </ul>
@@ -442,10 +442,10 @@ function cb_gallery_form($node, $form_state) {
   $form['gallery_info']['viewport_shadowbox'] = array(
     '#title'=> t('Media Highlight Style'),
     '#type'=> 'radios',
-    '#options' => array('shadowbox'=>'ShadowBox.', 'viewport'=>'CB Carousel 2.'),
+    '#options' => array('thumbnails'=>'Thumbnails. (With Shadowbox)', 'carousel_2'=>'CB Carousel 2. (Optional Shadowbox)', 'gallery'=>'CB Gallery. (Carousel 2 with Thumbnails, and an Optional Shadowbox)', ),
     '#description' => t('When thumbnails are clicked, you can choose to open a shadowbox, or display the media in a viewport.'),
     '#attributes' => array('class' =>'input_viewport_shadowbox'),
-    '#default_value'=> (isset($gallery_info['gallery_info']['viewport_shadowbox']) ? $gallery_info['gallery_info']['viewport_shadowbox'] : 'viewport'),
+    '#default_value'=> (isset($gallery_info['gallery_info']['viewport_shadowbox']) ? $gallery_info['gallery_info']['viewport_shadowbox'] : 'gallery'),
     '#required' => TRUE,
     );
   // Carousel 2 Settings!

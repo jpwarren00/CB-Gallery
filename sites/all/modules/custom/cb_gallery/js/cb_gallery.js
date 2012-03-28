@@ -6,13 +6,9 @@
  */
  $(function(){ // On Document Ready
     
-    //Start the nivo gallery if exists.
-    if($('.nivoGallery').length > 0){
-     $('.nivoGallery').nivoGallery();
-    }
    $('.viewport_trigger').click(function(){
       
-      $(this).parents('.thumbport').siblings('.nivoGallery').data('nivoGallery').goTo(Number($(this).attr('rel')));
+      //$(this).parents('.thumbport').siblings('.nivoGallery').data('nivoGallery').goTo(Number($(this).attr('rel')));
    });
       // Event binding must be reapplied when new gellery items are created.
       // This function will register all gallery_reorder_gui events.
@@ -51,11 +47,27 @@
                 break;
         }
         switch(viewport_shadowbox){
-            case "shadowbox":
-                $('#live_preview').addClass('noViewport').removeClass('viewport');
+            case "thumbnails":
+                $('#live_preview')
+                  .addClass('noViewport')
+                  .removeClass('viewport') //hide viewport
+                  .addClass('showThumbport')//show thumbport
+                  .removeClass('noThumbport');
             break;
-            case "viewport":
-                $('#live_preview').addClass('viewport').removeClass('noViewport');
+            case "gallery":
+                $('#live_preview')
+                  .addClass('viewport') //show viewport
+                  .removeClass('noViewport')
+                  .addClass('showThumbport') //show thumbport
+                  .removeClass('noThumbport');
+            break;
+            case "carousel_2":
+               console.log('boosh');
+                $('#live_preview')
+                  .addClass('viewport') //show viewport
+                  .removeClass('noViewport')
+                  .removeClass('showThumbport')
+                  .addClass('noThumbport'); //hide thumbport
             break;
         }
     }
