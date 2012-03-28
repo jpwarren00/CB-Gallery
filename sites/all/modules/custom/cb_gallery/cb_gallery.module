@@ -44,12 +44,12 @@ function cb_gallery_menu() {
     'page arguments' => array(2), // Pass serial data as an argument.
     'access arguments' => array('access content js'),
     );
-  $items['admin/cb_gallery/%/edit'] = array( // Edit
+  /*$items['admin/cb_gallery/%/edit'] = array( // Edit
     'title'=> 'Edit an Existing CB Gallery!',
     'page callback' =>'cb_gallery_edit_page',
     'page arguments' => array(2), // Pass %nid% as an argument.
     'access arguments' => array('access content')
-    );
+    );*/
   return $items;
 }
 
@@ -442,62 +442,115 @@ function cb_gallery_form($node, $form_state) {
   $form['gallery_info']['viewport_shadowbox'] = array(
     '#title'=> t('Media Highlight Style'),
     '#type'=> 'radios',
-    '#options' => array('shadowbox'=>'ShadowBox.', 'viewport'=>'Nivo Gallery.'),
+    '#options' => array('shadowbox'=>'ShadowBox.', 'viewport'=>'CB Carousel 2.'),
     '#description' => t('When thumbnails are clicked, you can choose to open a shadowbox, or display the media in a viewport.'),
     '#attributes' => array('class' =>'input_viewport_shadowbox'),
     '#default_value'=> (isset($gallery_info['gallery_info']['viewport_shadowbox']) ? $gallery_info['gallery_info']['viewport_shadowbox'] : 'viewport'),
     '#required' => TRUE,
     );
-  $form['gallery_info']['nivo_info'] = array(
-    '#title' => t('NIVO Gallery Settings'),
+  // Carousel 2 Settings!
+  $form['gallery_info']['carousel_settings'] = array(
+    '#title' => t('Carousel Settings'),
     '#type' => 'fieldset',
-    '#description' => t('Edit NIVO Gallery specific information.'),
     '#collapsible' => TRUE,
-    '#collapsed' => TRUE,
-    );
-  $form['gallery_info']['nivo_info']['nivo_pauseTime'] = array(
-      '#title'=> t('Length in miliseconds to pause between images in gallery.'),
-      '#type'=> 'textfield',
-      '#description' => t('NIVO recommends 3000. NON NUMERIC CHARs WILL BE REMOVED.'),
-      '#attributes' => array('class' =>'input_nivo_pauseTime'),
-      '#default_value' => (isset($gallery_info['gallery_info']['nivo']['pauseTime']) ? $gallery_info['gallery_info']['nivo']['pauseTime'] : 3000),
-      '#required' => TRUE,
+    '#collapsed' => FALSE,
+    '#tree' => TRUE,
   );
-  $form['gallery_info']['nivo_info']['nivo_animSpeed'] = array(
-      '#title'=> t('Length in miliseconds of transition animation.'),
-      '#type'=> 'textfield',
-      '#description' => t('NIVO recommends 300. NON NUMERIC CHARs WILL BE REMOVED.'),
-      '#attributes' => array('class' =>'input_nivo_animSpeed'),
-      '#default_value' => (isset($gallery_info['gallery_info']['nivo']['animSpeed']) ? $gallery_info['gallery_info']['nivo']['animSpeed'] : 300),
-      '#required' => TRUE,
+  $form['gallery_info']['carousel_settings']['carousel_height'] = array(
+    '#title' => 'Height',
+    '#default_value' => t(isset($gallery_info['gallery_info']['carousel_settings']['height']) ? $gallery_info['gallery_info']['carousel_settings']['height'] : 300),
+    '#type' => 'textfield',
+    '#description' => t('Height in pixels'),
+    '#size' => 4,
   );
-  $form['gallery_info']['nivo_info']['nivo_startPaused'] = array(
-      '#title'=> t('Should the Gallery be PAUSED when it loads?'),
-      '#type'=> 'radios',
-      '#description' => t('Select YES if you want this gallery to be PAUSED. No, if you would like it to rotate.'),
-      '#attributes' => array('class' =>'input_nivo_startPaused'),
-      '#options' => array('true'=>'Yes. Pause the Gallery.', 'false'=>'No. Begin rotation when loaded.'),
-      '#default_value' => (isset($gallery_info['gallery_info']['nivo']['startPaused']) ? $gallery_info['gallery_info']['nivo']['startPaused'] : 'false'),
-      '#required' => TRUE,
+  $form['gallery_info']['carousel_settings']['width'] = array(
+    '#title' => 'Width',
+    '#default_value' => t(isset($gallery_info['gallery_info']['carousel_settings']['width']) ? $gallery_info['gallery_info']['carousel_settings']['width'] : 500),
+    '#type' => 'textfield',
+    '#description' => t('Width in pixels'),
+    '#size' => 4,
   );
-  $form['gallery_info']['nivo_info']['nivo_directionNav'] = array(
-      '#title'=> t('Display Previous/Next buttons?'),
-      '#type'=> 'radios',
-      '#description' => t('Select YES if you want to display Previous/Next Buttons. No, if you do not.'),
-      '#attributes' => array('class' =>'input_nivo_directionNav'),
-      '#options' => array('true'=>'Yes.', 'false'=>'No.'),
-      '#default_value' => (isset($gallery_info['gallery_info']['nivo']['directionNav']) ? $gallery_info['gallery_info']['nivo']['directionNav'] : 'true'),
-      '#required' => TRUE,
+  $form['gallery_info']['carousel_settings']['display'] = array(
+    '#title' => 'Display Count',
+    '#default_value' => t(isset($gallery_info['gallery_info']['carousel_settings']['display']) ? $gallery_info['gallery_info']['carousel_settings']['display'] : 1),
+    '#type' => 'textfield',
+    '#description' => t('How many pictures do you want visible? This number should be divisible by the total amount of pictures. 
+    	If this number is not divisible by the total amount of images, the carousel will behave as if "single incremental slide" is checked.'),
+    '#size' => 2,
   );
-  $form['gallery_info']['nivo_info']['nivo_progressBar'] = array(
-      '#title'=> t('Display expanding "Progress Bar" of elapsed "pause time?"'),
-      '#type'=> 'radios',
-      '#description' => t('Select YES if you want to display the Progress Bar. No, if you do not.'),
-      '#attributes' => array('class' =>'input_nivo_progressBar'),
-      '#options' => array('true'=>'Yes.', 'false'=>'No.'),
-      '#default_value' => (isset($gallery_info['gallery_info']['nivo']['progressBar']) ? $gallery_info['gallery_info']['nivo']['progressBar'] : 'true'),
-      '#required' => TRUE,
+  $form['gallery_info']['carousel_settings']['move_amount'] = array(
+    '#title' => t('Auto-slide, one image at a time.'),
+    '#default_value' => (isset($gallery_info['gallery_info']['carousel_settings']['move_amount']) ? $gallery_info['gallery_info']['carousel_settings']['move_amount'] : ''),
+    '#type' => 'checkbox',
   );
+  $form['gallery_info']['carousel_settings']['controls'] = array(
+    '#title' => t('Display "Prev and Next" buttons.'),
+    '#default_value' => (isset($gallery_info['gallery_info']['carousel_settings']['controls']) ? $gallery_info['gallery_info']['carousel_settings']['controls'] : ''),
+    '#type' => 'checkbox',
+  );
+  $form['gallery_info']['carousel_settings']['pager'] = array(
+    '#title' => t('Display numbered pager buttons'),
+    '#default_value' => (isset($gallery_info['gallery_info']['carousel_settings']['pager']) ? $gallery_info['gallery_info']['carousel_settings']['pager'] : ''),
+    '#type' => 'checkbox',
+  );
+  $form['gallery_info']['carousel_settings']['overlay'] = array(
+    '#title' => t('Display an overlay over part of the image.'),
+    '#default_value' => (isset($gallery_info['gallery_info']['carousel_settings']['overlay']) ? $gallery_info['gallery_info']['carousel_settings']['overlay'] : ''),
+    '#type' => 'checkbox',
+  );
+  $form['gallery_info']['carousel_settings']['overlay_toggle'] = array(
+    '#title' => t('Toggle overlay on mouse over?'),
+    '#default_value' => (isset($gallery_info['gallery_info']['carousel_settings']['overlay_toggle']) ? $gallery_info['gallery_info']['carousel_settings']['overlay_toggle'] : ''),
+    '#type' => 'checkbox',
+  );
+  $form['gallery_info']['carousel_settings']['shadowbox'] = array(
+    '#title' => t('When a featured image is clicked, open a Shadowbox.'),
+    '#default_value' => (isset($gallery_info['gallery_info']['carousel_settings']['shadowbox']) ? $gallery_info['gallery_info']['carousel_settings']['shadowbox'] : ''),
+    '#type' => 'checkbox',
+  );
+  $form['gallery_info']['carousel_settings']['overlay_height'] = array(
+    '#title' => t('Overlay height'),
+    '#default_value' => (isset($gallery_info['gallery_info']['carousel_settings']['overlay_height']) ? $gallery_info['gallery_info']['carousel_settings']['overlay_height'] : 150),
+    '#type' => 'textfield',
+    '#description' => t('Overlay height in pixels.'),
+    '#size' => 4,
+  );
+  $form['gallery_info']['carousel_settings']['overlay_y'] = array(
+    '#title' => t('Y position'),
+    '#default_value' => (isset($gallery_info['gallery_info']['carousel_settings']['overlay_y']) ? $gallery_info['gallery_info']['carousel_settings']['overlay_y'] : 0),
+    '#type' => 'textfield',
+    '#description' => t('Y position in percent. Values 0-50 equal position top. Values 51-100 equal position bottom.'),//TODO : Wha?? Explain this better.... 
+    '#size' => 4,
+  );
+  $form['gallery_info']['carousel_settings']['interval_time'] = array(
+    '#title' => 'Interval Time',
+    '#default_value' => t(isset($gallery_info['gallery_info']['carousel_settings']['interval_time']) ? $gallery_info['gallery_info']['carousel_settings']['interval_time'] : 4000),
+    '#type' => 'textfield',
+    '#description' => t('Pause time (in seconds) between image transitions.'),
+    '#size' => 4,
+  );
+  $form['gallery_info']['carousel_settings']['duration'] = array(
+    '#title' => 'Duration',
+    '#default_value' => (isset($gallery_info['gallery_info']['carousel_settings']['duration']) ? $gallery_info['gallery_info']['carousel_settings']['duration'] : 1000),
+    '#type' => 'textfield',
+    '#description' => t('Time (in seconds) to complate the image transition. (Smaller number = faster)'),
+    '#size' => 4,
+  );
+  $form['gallery_info']['carousel_settings']['flickr_set'] = array(
+    '#title' => 'Flickr Set',
+    '#default_value' => t(isset($gallery_info['gallery_info']['carousel_settings']['flickr_set']) ? $gallery_info['gallery_info']['carousel_settings']['flickr_set'] : ''),
+    '#type' => $flickr_type,
+    '#description' => t('Flickr Set ID. If you want to pull images from Flickr, put the SET ID here.'),
+  );
+  $form['gallery_info']['carousel_settings']['flickr_api'] = array(
+    '#title' => 'Flickr API',
+    '#default_value' =>  t(isset($gallery_info['gallery_info']['carousel_settings']['flickr_api']) ? $gallery_info['gallery_info']['carousel_settings']['flickr_api'] : ''),
+    '#type' => (module_exists('flickrapi') ? 'textfield' : 'hidden'),
+    '#description' => t('Flickr API Key. To pull from your Flickr feed, you must have a valid Flickr API KEY. '),
+  );
+  
+  
+  
   
   $form['gallery_info']['thumbnail_width'] = array(
       '#title'=> t('Thumbnail width (in pixels), by which to constrain the thumbnail images'),
@@ -686,16 +739,15 @@ function cb_gallery_nodeapi(&$node, $op, $a3 = NULL, $a4 = NULL){
       $sql  = "DELETE FROM {cb_gallery_parents} WHERE nid='%d';";
       $args = array($node->nid);
       db_query($sql,$args);
-      $will_be_json = array(
-      'nivo_animSpeed'=>$node->nivo_animSpeed,
-      'nivo_pauseTime'=>$node->nivo_pauseTime,
-      'nivo_startPaused'=>$node->nivo_startPaused,
-      'nivo_directionNav'=>$node->nivo_directionNav,
-      'nivo_progressBar'=>$node->nivo_progressBar,
-      );
-      $nivo_gallery_json = serialize($will_be_json);
-      $sql  = "INSERT INTO {cb_gallery_parents} (nid, thumbnail_aspect_ratio, viewport_shadowbox, thumbnail_width, unique_css_block_class, nivo_gallery_json) VALUES ('%d','%s','%s', '%s', '%s', '%s');";
-      $args = array($node->nid, $node->thumbnail_aspect_ratio, $node->viewport_shadowbox, $node->thumbnail_width, $node->unique_css_block_class, $nivo_gallery_json);
+      
+      // Sreate the structured data-set array of carousel variables
+      $will_be_json = array();
+      foreach ($node->carousel_settings as $key=>$val) {
+        $will_be_json[$key] = $val;
+      }
+      $carousel_2_serialized_settings = serialize($will_be_json);
+      $sql  = "INSERT INTO {cb_gallery_parents} (nid, thumbnail_aspect_ratio, viewport_shadowbox, thumbnail_width, unique_css_block_class, carousel_2_serialized_settings) VALUES ('%d','%s','%s', '%s', '%s', '%s');";
+      $args = array($node->nid, $node->thumbnail_aspect_ratio, $node->viewport_shadowbox, $node->thumbnail_width, $node->unique_css_block_class, $carousel_2_serialized_settings);
       db_query($sql,$args);
     break;
     case "view":
@@ -720,9 +772,10 @@ function cb_gallery_preprocess_node(&$variables) {
   // Add JS and CSS required to view this node.
   drupal_add_css(drupal_get_path('module', 'cb_gallery') . '/css/cb_gallery.css');
   drupal_add_js(drupal_get_path('module', 'cb_gallery') . '/js/cb_gallery.js');
-  //TODO: confine the includes to only when needed.
-  drupal_add_css(drupal_get_path('module', 'cb_gallery') . '/js/nivo-gallery/nivo-gallery.css');
-  drupal_add_js(drupal_get_path('module', 'cb_gallery') . '/js/nivo-gallery/jquery.nivo.gallery.js');
+  //TODO: 
+  //REPLACE WITH Carousel 2 //
+  //drupal_add_css(drupal_get_path('module', 'cb_gallery') . '/js/carousel_2-gallery/nivo-gallery.css');
+  //drupal_add_js(drupal_get_path('module', 'cb_gallery') . '/js/carousel_2-gallery/jquery.nivo.gallery.js');
 
   // Set the template files to load the node template.
   if ($variables['node']->cb_gallery) {
@@ -844,13 +897,13 @@ function cb_gallery_preprocess_node(&$variables) {
     }
   }
   // Pass variables to the node template file.
-  $viewport = '<div class="nivoGallery"><ul>'; // DO NOT REMOVE THIS CLASS NAME.
+  $viewport = '<div class="carousel_2"><ul>'; 
   $viewport .= $viewport_content;
   $viewport .= '</ul></div>';
   
-  $thumbport = '<ul class="thumbport clearfix">';
+  $thumbport = '<div class="thumbport"><ul class="clearfix">';
   $thumbport .= $thumbport_content;
-  $thumbport .= '</ul>';
+  $thumbport .= '</ul></div>';
   
   $variables['cb_gallery'] = $cb_gallery;
   $variables['cb_gallery']['viewport'] = (isset($viewport_content) ? $viewport : NULL);

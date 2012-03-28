@@ -10,9 +10,9 @@
 // This node.tpl file is a default display.
 // To edit the display, simply uncomment the following line to see the entire
 // structure of the cb_gallery that you can use for your own themes.
-// var_dump($cb_gallery);
+dsm($cb_gallery);
 ?>
 <div class="cb_gallery_node <?php print $cb_gallery['gallery_info']['unique_css_block_class']; ?>">
-<?php print $cb_gallery['viewport']; ?>
-<?php print $cb_gallery['thumbport']; ?>
+<?php //print $cb_gallery['viewport']; ?>
+<?php //print $cb_gallery['thumbport']; ?>
 </div> <!-- end cb_gallery_node -->

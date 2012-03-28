@@ -183,11 +183,11 @@ h3.gallery_title{
 div.cb_gallery_node .viewport{
 	border:1px solid #ccc;
 }
-ul.thumbport {
+div.thumbport ul {
 	padding: 0;
 	border:1px solid #ccc;
 }
-ul.thumbport li{
+div.thumbport ul li{
   padding:0;
   margin:0;
   float:left;
@@ -198,19 +198,4 @@ ul.thumbport li p{
   margin:0;
   overflow:hidden;
   border:1px solid #ccc;
-}
-
-/*NIVO GALLERY*/
-ul.nivoGallery-slides li{ /*Override any globally themed <li> margin/padding*/
-margin: 0px;
-padding: 0px;
-}
-div.cb_gallery_node.boosh .nivoGallery{
-	height: 290px;
-}
-div.cb_gallery_node.boosh{
-  /*width: 515px;*/
-}
-a.viewport_trigger.video{
-	
 }

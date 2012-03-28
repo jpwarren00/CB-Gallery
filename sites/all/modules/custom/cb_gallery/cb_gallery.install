@@ -32,8 +32,8 @@ function cb_gallery_schema() {
         'description' => t('CSS Class to put into the outermost div.'),
         'type' => 'text',
       ),
-      'nivo_gallery_json' => array(
-        'description' => t('JSON used to configure the NIVO Gallery.'),
+      'carousel_2_serialized_settings' => array(
+        'description' => t('Serialized PHP used to configure the Carousel.'),
         'type' => 'text',
       ),
     ),
