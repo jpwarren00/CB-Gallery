@@ -196,7 +196,8 @@ function _get_cb_gallery_info($nid, $single_new_item = NULL) {
           cb_gallery_children.thumbnail_path,
           cb_gallery_children.media_type,
           cb_gallery_children.media_id,
-          cb_gallery_children.media_sort_order 
+          cb_gallery_children.media_sort_order,
+          cb_gallery_parents.carousel_2_serialized_settings 
           FROM {cb_gallery_parents}
           LEFT JOIN {cb_gallery_children}
           ON cb_gallery_children.nid = cb_gallery_parents.nid
@@ -222,6 +223,7 @@ function _get_cb_gallery_info($nid, $single_new_item = NULL) {
       $return['gallery_info']['viewport_shadowbox']=$row->viewport_shadowbox;
       $return['gallery_info']['unique_css_block_class']=$row->unique_css_block_class;
       $return['gallery_info']['thumbnail_width']=$row->thumbnail_width;
+      $return['gallery_info']['carousel_2_serialized_settings']=$row->carousel_2_serialized_settings;
     }
     // Media data grows during iteration.
     if(!empty($row->media_id)) {
@@ -393,8 +395,9 @@ function cb_gallery_form($node, $form_state) {
   // Get gallery data.
   if(isset($node->nid)) {
     $gallery_info = _get_cb_gallery_info($node->nid, NULL);
-    $gallery_info['gallery_info']['carousel_settings'] = (isset($gallery_info['gallery_info']['carousel_2_serialized_settings']) ? unserialize($gallery_info['gallery_info']['carousel_2_serialized_settings'] : NULL);
+    $gallery_info['gallery_info']['carousel_settings'] = (isset($gallery_info['gallery_info']['carousel_2_serialized_settings']) ? unserialize($gallery_info['gallery_info']['carousel_2_serialized_settings']): NULL);
   }
+  dsm($gallery_info['gallery_info']['carousel_settings'] );
   $form['gallery_info'] = array(
     '#title' => t('Gallery Information'),
     '#type' => 'fieldset',
@@ -793,6 +796,9 @@ function cb_gallery_preprocess_node(&$variables) {
   $img_index = 0;
   $viewport_content = ($media_feature_type == 'viewport' ? '' : NULL);
   $thumbport_content =  (isset($cb_gallery['media']) ? '' : NULL);
+  $acceptable_image_formats = array('jpg', 'jpeg', 'png', 'gif');
+  $acceptable_video_formats = array('flv', 'mp4', 'ogg');
+  $pager_list_items =''; // Will be replaced with LI's used for paging buttons.
   
   // We must calculate ourselves, the relative height of thumbnails
   // based on their aspect ratio and constrained widths.
@@ -807,14 +813,36 @@ function cb_gallery_preprocess_node(&$variables) {
       $cb_gallery['gallery_info']['thumbnail_height'] = $cb_gallery['gallery_info']['thumbnail_width'];
     break;
   }
-  
+  function _get_file_extension($filename){
+    $x =  pathinfo($filename, PATHINFO_EXTENSION);
+    return $x['extension'];
+  }
   // First we check if media exists at all.
   if(isset($cb_gallery['media'])) {
     
    // Then we loop through the images within the gallery.
     foreach($cb_gallery['media'] as $media) {
       
-      extract($media, EXTR_OVERWRITE);
+      // Register ALL vars from {cb_gallery_children}.
+      extract($media, EXTR_OVERWRITE); 
+      
+      // DS - Pull Carousel 2 Settings from their serialized column in the DB
+      $carousel_2_settings = unserialize($cb_gallery['gallery_info']['carousel_2_serialized_settings']);
+      
+       
+      /*
+       // Flickr Photo Preprocessing.
+       if(isset($carousel_2_settings['flickr_set']) && isset($carousel_2_settings['flickr_api'])) {
+        $carousel_slides = _getSlidesFromFlickrFeed($carousel_2_settings);
+      }
+      */
+        
+      $media_extention = _get_file_extension($media_content);
+      $shadowbox_trigger = ''; // Replaced with rel="shadowbox;height...etc.."
+      $overlay = ''; // Replaced with overlay markup.
+      
+      // Pull actual image dimentions using this function...?
+      list($img_actual_width, $img_actual_height) = getimagesize($media_content);
       
       // PREPROCESSING VIDEO
       if($media_type == 'video') {
@@ -831,35 +859,49 @@ function cb_gallery_preprocess_node(&$variables) {
         }
         
         // Now that we have as much data as we can grab from the media_content
-        // lets display the markup that will give the nivo slider the elements
+        // lets display the markup that will give the carousel_2 the elements
         // that it needs to load it's video player.
         if(isset($viewport_content)) {
           switch($media_feature_type) {
-            case 'viewport':
-            // VIDEO IN VIEWPORT
-              $viewport_content .= '<li data-type="video" data-title="' . $media_caption . '">';
-              if($html5_video) {
-                $html5_video_srcs = explode("\r\n", $media_content);
-                $viewport_content .= '<video width="' . $vid_width . '" height="' . $vid_height . '" controls="control" preload="none">';
-                foreach ($html5_video_srcs as $vid_src) {
-                    $viewport_content .='<source src="' . $vid_src .'" type="video/' . $v[1] . '" />';
-                }
-                $viewport_content .= '</video>';
-              } else {
-                $viewport_content .= stripslashes($media_content); // Add full HTML embed here.
+            case 'carousel_2':
+            case 'cb_gallery':
+              // CAROUSEL WITH VIDEO
+              if($carousel_2_settings['pager']) {
+                $pager_list_items .= '<li><a rel="' . $img_index . '" class="pagenum" href="#">' . $img_index . '</a></li>';
               }
-              $viewport_content .= '</li>';
               
-              // The link for the thumbnail used to FEATURE this video will be
-              // different than if we were using shadowbox.
-              // Here is the opening A tag to add navigation to nivo gallery
-              $opening_a_tag = '<a href="#" class="viewport_trigger video" rel="' . $img_index . '" title="' . $media_caption . '" onclick="return false;">';
+              $carousel_slides .= '<li class="item_video" rel="' . $img_index . '">';
+              $carousel_slides .= '<a href="#border-box-' . $node->nid . '" rel="shadowbox[carousel_' . $node->nid . '];height=' . $img_actual_height . ';width=' . $img_actual_width . '">';
+              if($carousel_2_settings['overlay'] == 1) { 
+                $carousel_slides .= '<div class="overlay"><?php print $overlay; ?></div>';
+              } 
+              $carousel_slides .= '</a>';
+              $carousel_slides .= '<div class="border-box" id="border-box-' . $node->nid . '">';
+              $carousel_slides .= '<div class="videoContainer">';
+              $carousel_slides .= '<object type="application/x-shockwave-flash" id="swf-' . $node->nid . '" tabindex="0"
+                                      data="http://' . $_SERVER['HTTP_HOST'] . '/sites/all/modules/custom/flash_video/swf/homePlayer.swf"
+                                      width="<?php print $width; ?>" height="<?php print $height; ?>">
+                                      <param name="menu" value="false">
+                                      <param name="scale" value="noScale">
+                                      <param name="allowFullscreen" value="true">
+                                      <param name="allowScriptAccess" value="always">
+                                      <param name="bgcolor" value="#FFFFFF">
+                                      <param name="quality" value="best">
+                                      <param name="wmode" value="transparent">
+                                      <param name="flashvars" value="videoSrc=' . $media_content . '&amp;posterSrc=' . $thumbnail_path . '&amp;stopAndResetCallBack=stopAndResetVideo&amp;accessibleVideoId=accessibleVideoContent-' . $node->nid . '&amp;playVideoCallBack=playVideo&amp;videoStartCall=videoStart[' . $node->nid . ']&amp;videoStopCall=videoStop[' . $node->nid . ']&amp;showBigPlayBtn=true&amp;aSrcAccount=clgbcollegeboardcomprod">
+                                    </object>
+                                    <div id="accessibleVideoContent-' . $node->nid . '" class="onlyScreenReaderVisible">
+                                      <a href="http://media.collegeboard.com/digitalServices/video-player/nosca/Come-to-NOSCA-2012-Destination-Equity-071211-final.mp4">Download Video</a>
+                                    </div>
+                                  </div>
+                                </div></li>';
             break;
-            case 'shadowbox' :
+            case 'thumbnails' :
+            case 'cb_gallery':
             // VIDEO IN SHADOWBOX
               // Here is the opening A tag used to play this video inside of a
               // shadowbox.
-              $opening_a_tag = '<a href="" /' . drupal_get_path('module', 'cb_gallery') .'/include/player.php?embed_host=' . $embed_host . '&height=' . $vid_height . '&width=' . $vid_width . '&src=' . $src . '">';
+              $opening_thumbnail_a_tag = '<a href="" /' . drupal_get_path('module', 'cb_gallery') .'/include/player.php?embed_host=' . $embed_host . '&height=' . $vid_height . '&width=' . $vid_width . '&src=' . $src . '">';
             break;
           }
         }
@@ -868,28 +910,48 @@ function cb_gallery_preprocess_node(&$variables) {
       // PREPROCESS IMAGE
       if($media_type == 'image') {
         switch($media_feature_type) {
-          case 'viewport' :
-            // IMAGE IN VIEWPORT
-            $viewport_content .= '<li data-title="' . $media_name . '" data-caption="' . $media_caption . '">';
-            $viewport_content .= '<img src="' . $media_content . '" alt="' . $media_caption . 'boosh" />';
-            $viewport_content .= '</li>';
+          case 'carousel_2' :
+          case 'cb_gallery':
+            // CAROUSEL WITH IMAGE
+            if(!in_array($media_extention, $acceptable_image_formats)) {
+              drupal_set_message('error', 'Image format is unsupported.');
+            }
+            // Is this using Shadowbox?
+            if($carousel_2_settings['shadowbox'] == 1) {
+              // If so, create the rel trigger for the makrup.
+              $shadowbox_trigger = ' rel="shadowbox[carousel_' . $node->nid . '];height=' . $img_actual_height . ';width=' . $img_actual_width . ';"';
+            }
+            // Is this using an Overlay? 
+            if($carousel_2_settings['overlay'] == 1 && !empty($overlay)) {
+              // If so, build the overlay for the markup.
+              $overlay = '<div class="overlay">' . $media_caption . '</div>';
+            } 
             
-            // Here is the opening A tag used to feature this this image inside
-            // of the nivo-gallery.
-            $opening_a_tag = '<a href="' . $media_content . '" class="viewport_trigger" rel="' . $img_index . '" title="' . $media_caption . '" onclick="return false;">';
+            // Begin the build of the LI elements that will make up the carousel.
+            $carousel_slides .= '<li class="item_image" rel="' . $page_count . '">';
+            $carousel_slides .= '<a href="' .$media_content .'"' . $shadowbox_trigger . '>';// TODO: carousel images can link to pages.
+            $carousel_slides .= $overlay;
+            $carousel_slides .= '<img  src="' . $media_content . '" />';
+            $carousel_slides .= '</a>';
+            $carousel_slides .= '</li>';
           break;
-          case 'shadowbox' :
-          // IMAGE IN SHADOWBOX
-            $opening_a_tag = '<a href="' . $media['media_content'] . '" rel="shadowbox[' . $node->nid . '];" title="' . $media['media_caption'] . '" onclick="return false;">';
+          case 'thumbnails' :
+          // IMAGE IN THUMBNAILS 
+            $opening_thumbnail_a_tag = '<a href="' . $media['media_content'] . '" rel="shadowbox[' . $node->nid . '];" title="' . $media['media_caption'] . '" onclick="return false;">';
+          break;
+          case 'cb_gallery':
+            // IMAGE IN CB_GALLERY
+            $opening_thumbnail_a_tag = '<a href="' . $media_content . '" class="viewport_trigger" rel="' . $img_index . '" title="' . $media_caption . '" onclick="return false;">';
           break;
         }
       }
+      
       
       // PREPROCESS THUMBNAIL IMAGE
       // Add the thumbnail image to the thumbport.
       $thumbport_content .= '<li>';
       $thumbport_content .= '<p style="height:'.$cb_gallery['gallery_info']['thumbnail_height'] . 'px;">';
-      $thumbport_content .= $opening_a_tag;
+      $thumbport_content .= $opening_thumbnail_a_tag;
       $thumbport_content .= '<img src="' . $thumbnail_path . '" style="width:' . $cb_gallery['gallery_info']['thumbnail_width'] . 'px;"/>';
       $thumbport_content .= '</a>';
       $thumbport_content .= '</p>';
@@ -897,10 +959,15 @@ function cb_gallery_preprocess_node(&$variables) {
       $img_index++;
     }
   }
+  
   // Pass variables to the node template file.
-  $viewport = '<div class="carousel_2"><ul>'; 
-  $viewport .= $viewport_content;
-  $viewport .= '</ul></div>';
+  
+  $viewport  = '<div id="carousel">';
+  $viewport .= '<div class="viewport">';
+  $viewport .= '<ul class="overview">';
+  $viewport .= $pager_list_items;
+  $viewport .= $carousel_slides;
+  $viewport .= '</ul></div></div>';
   
   $thumbport = '<div class="thumbport"><ul class="clearfix">';
   $thumbport .= $thumbport_content;
