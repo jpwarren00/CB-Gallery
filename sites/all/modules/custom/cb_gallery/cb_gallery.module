@@ -393,6 +393,7 @@ function cb_gallery_form($node, $form_state) {
   // Get gallery data.
   if(isset($node->nid)) {
     $gallery_info = _get_cb_gallery_info($node->nid, NULL);
+    $gallery_info['gallery_info']['carousel_settings'] = (isset($gallery_info['gallery_info']['carousel_2_serialized_settings']) ? unserialize($gallery_info['gallery_info']['carousel_2_serialized_settings'] : NULL);
   }
   $form['gallery_info'] = array(
     '#title' => t('Gallery Information'),
