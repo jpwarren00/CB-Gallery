@@ -100,7 +100,8 @@ h3.gallery_title{
 	width:400px;
 }
 #my_cb_gallery div img{
-  max-height:60px;
+	width: 100%;
+	height: auto;
 }
 #live_preview{
   float: right;

@@ -128,15 +128,25 @@
     // Bind Thumbnail Aspect Ratio
     $('input[name="thumbnail_aspect_ratio"]').click(function(){
         var thumbnail_aspect_ratio = $(this).val(),
-            viewport_shadowbox = $('input[name="viewport_shadowbox"]:checked').val();
-       refreshLivePreview(viewport_shadowbox, thumbnail_aspect_ratio);
+        viewport_shadowbox = $('input[name="viewport_shadowbox"]:checked').val();
+        
+        refreshLivePreview(viewport_shadowbox, thumbnail_aspect_ratio);
     });
     
     // Bind Viewport Toggle
     $('input[name="viewport_shadowbox"]').click(function(){
         var thumbnail_aspect_ratio = $('input[name="thumbnail_aspect_ratio"]:checked').val(),
-            viewport_shadowbox = $(this).val();
+         viewport_shadowbox = $(this).val();
        refreshLivePreview(viewport_shadowbox, thumbnail_aspect_ratio);
+       switch(viewport_shadowbox){
+          case 'carousel_2':
+          case 'cb_gallery':
+               $('.carousel_2_settings_fieldset').show();
+          break;
+          default:
+               $('.carousel_2_settings_fieldset').hide();
+          break;
+        }
     });
     
     // Cancel Button Bindongs
@@ -149,33 +159,63 @@
     });
     
     
+    /**
+     * Update CB_PARENTS table with new data.
+     */
+    $('.input_update_gallery').click(function(){
+          var  data_to_post = {};
+          var gallery_nid = $('.gallery_nid').val();
+          $('.send_to_cb_parents').each(function(){
+               var name = $(this).attr('name');
+               var val = $(this).val();
+               if(name != undefined) {
+                    if($(this).is(':checkbox, :radio')) {
+                         val = $('input[name=' + $(this).attr('name') + ']:checked').val();
+                    }
+               }
+          });
+          $.ajax({
+            type: "POST",
+            url: '/admin/cb_gallery_ajax/update_gallery/' + gallery_nid,
+            dataType: 'json',
+            data: data_to_post,
+            success: function (data) {
+                 set_cb_status(data);
+               }
+          });
+     });
+    
+    /**
+     * Update CB_CHILDREN table with new data.
+     */
     $('.submit_new_media, .submit_edit_media_button').click(function(){
+     
       var op = ($(this).hasClass('submit_edit_media_button') ? 'update' : 'insert');
+      var data_to_post = {};
       var gallery_nid = $('.gallery_nid').val();
+      
+          $('.send_to_cb_children').each(function(){
+               var name = $(this).attr('name');
+               var val = $(this).val();
+               if(name != undefined) {
+                    if($(this).is(':checkbox, :radio')) {
+                         val = $('input[name=' + $(this).attr('name') + ']:checked').val();
+                    }
+                    data_to_post[name] = val;
+               }
+          });
         $.ajax({
             type: "POST",
             url: '/admin/cb_gallery_ajax/media_processing/'+gallery_nid,
             dataType: 'json',
-            data: {
-                'thumbnail_aspect_ratio'  : $('.input_thumbnail_ratio:checked').val(),
-                'viewport_shadowbox'      : $('.input_viewport_shadowbox:checked').val(),
-                'media_name'              : $('.input_image_name').val(),
-                'media_type'              : $('.input_object_type:checked').val(),
-                'media_caption'           : $('.input_image_caption').val(),
-                'thumbnail_path'          : $('.input_thumbnail_path').val(),
-                'video_embed_code'        : $('.input_video_embed_code').val(), // this will contain HTML and be sanatized on the backend.
-                'remote_image'            : $('.input_remote_image').val(),
-                'edit_media_id'           : $('.edit_media_id').val()
-                },
+            data: data_to_post,
             success: function (data) {
                   if(data[0].return_media != undefined) {
                      switch(op){
                         case 'update':
-                           
                         $('#my_cb_gallery .being_edited').after(data[0].return_media);// add the returned element to the DOM.
                         $('#my_cb_gallery .being_edited').fadeOut('slow',function(){
                            $('#my_cb_gallery .new_cb_addition').fadeIn('slow',function(){
-                              
                               $(this).removeClass('new_cb_addition'); // remove "new_addition" flag
                               $('.being_edited').removeClass('being_edited');//remove all editing styles
                            }); 
@@ -186,13 +226,11 @@
                            $('#my_cb_gallery .new_cb_addition').fadeIn('slow',function(){
                               $(this).removeClass('new_cb_addition');
                               }); 
-                           
                         break;
                      }
                      $('#my_cb_gallery .empty').fadeOut('slow',function(){$(this).remove();}); // remove empty placeholder if it exists
                      resetEditFormFields(); // Clear out the form
                      resetEventBindings(); // Reset the jquery event bindings to include the newly added DOM element.
-                     console.log('reset');
                   } 
                }
           });

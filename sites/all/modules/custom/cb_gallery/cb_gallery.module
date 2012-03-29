@@ -179,6 +179,14 @@ function cb_gallery_ajax_update_gallery($nid) {
   
   return drupal_json(array('status' => TRUE, 'data' => '('.$clean['display'].'<div class="status">Gallery info saved</div>'));
 }
+
+/**
+ * _get_file_extension($filename)
+ * Get the extention of a URL path.
+ */
+function _get_file_extension($filename) {
+  return pathinfo($filename, PATHINFO_EXTENSION);
+}
 /**
  * @_get_cb_gallery_info($nid, $single_new_item = NULL)
  * CAN BE USED ASYNCHRONOUSLY.
@@ -403,7 +411,7 @@ function cb_gallery_form($node, $form_state) {
   if(isset($node->nid)) {
     $gallery_info = _get_cb_gallery_info($node->nid, NULL);
     $gallery_info['gallery_info']['carousel_settings'] = (isset($gallery_info['gallery_info']['carousel_2_serialized_settings']) ? unserialize($gallery_info['gallery_info']['carousel_2_serialized_settings']): 'poo');
-    dsm(unserialize($gallery_info['gallery_info']['carousel_2_serialized_settings']));
+    
   }
   $form['gallery_info'] = array(
     '#title' => t('Gallery Information'),
@@ -440,23 +448,23 @@ function cb_gallery_form($node, $form_state) {
     '#required' => TRUE,
     );
   
+  $form['gallery_info']['viewport_shadowbox'] = array(
+    '#title'=> t('Media Highlight Style'),
+    '#type'=> 'radios',
+    '#options' => array('thumbnails'=>'Thumbnails. (With Shadowbox)', 'carousel_2'=>'CB Carousel 2. (Optional Shadowbox)', 'gallery'=>'CB Gallery. (Carousel 2 with Thumbnails, and an Optional Shadowbox)', ),
+    '#description' => t('When thumbnails are clicked, you can choose to open a shadowbox, or display the media in a viewport.'),
+    '#attributes' => array('class' =>'input_viewport_shadowbox send_to_cb_parents'),
+    '#default_value'=> (isset($gallery_info['gallery_info']['viewport_shadowbox']) ? $gallery_info['gallery_info']['viewport_shadowbox'] : 'gallery'),
+    '#required' => TRUE,
+    );
+  
   $form['gallery_info']['thumbnail_aspect_ratio'] = array(
     '#title'=> t('Thumbnail Aspect Ratio'),
     '#type'=> 'radios',
     '#options' => array('4:3'=>'4:3.', '16:9'=>'16:9.', '1:1'=>'1:1. (Square Grid)'), //TODO: Add "Custom" with new textfield for height.
     '#default_value'=> (isset($gallery_info['gallery_info']['thumbnail_aspect_ratio']) ? $gallery_info['gallery_info']['thumbnail_aspect_ratio']: '16:9'),
     '#description' => t('The aspect ratio of thumbnail images.'),
-    '#attributes' => array('class' =>'input_thumbnail_ratio'),
-    '#required' => TRUE,
-    );
-  
-  $form['gallery_info']['viewport_shadowbox'] = array(
-    '#title'=> t('Media Highlight Style'),
-    '#type'=> 'radios',
-    '#options' => array('thumbnails'=>'Thumbnails. (With Shadowbox)', 'carousel_2'=>'CB Carousel 2. (Optional Shadowbox)', 'gallery'=>'CB Gallery. (Carousel 2 with Thumbnails, and an Optional Shadowbox)', ),
-    '#description' => t('When thumbnails are clicked, you can choose to open a shadowbox, or display the media in a viewport.'),
-    '#attributes' => array('class' =>'input_viewport_shadowbox'),
-    '#default_value'=> (isset($gallery_info['gallery_info']['viewport_shadowbox']) ? $gallery_info['gallery_info']['viewport_shadowbox'] : 'gallery'),
+    '#attributes' => array('class' =>'input_thumbnail_ratio send_to_cb_parents'),
     '#required' => TRUE,
     );
   // Carousel 2 Settings!
@@ -464,6 +472,7 @@ function cb_gallery_form($node, $form_state) {
     '#title' => t('Carousel Settings'),
     '#type' => 'fieldset',
     '#collapsible' => TRUE,
+    '#attributes' => array('class' =>'carousel_2_settings_fieldset'),
     '#collapsed' => FALSE,
     '#tree' => TRUE,
   );
@@ -471,6 +480,7 @@ function cb_gallery_form($node, $form_state) {
     '#title' => 'Height',
     '#default_value' => t(isset($gallery_info['gallery_info']['carousel_settings']['height']) ? $gallery_info['gallery_info']['carousel_settings']['height'] : 300),
     '#type' => 'textfield',
+    '#attributes' => array('class' =>'input_carousel_height send_to_cb_parents'),
     '#description' => t('Height in pixels'),
     '#size' => 4,
   );
@@ -478,6 +488,7 @@ function cb_gallery_form($node, $form_state) {
     '#title' => 'Width',
     '#default_value' => t(isset($gallery_info['gallery_info']['carousel_settings']['width']) ? $gallery_info['gallery_info']['carousel_settings']['width'] : 500),
     '#type' => 'textfield',
+    '#attributes' => array('class' =>'input_carousel_width send_to_cb_parents'),
     '#description' => t('Width in pixels'),
     '#size' => 4,
   );
@@ -485,42 +496,50 @@ function cb_gallery_form($node, $form_state) {
     '#title' => 'Display Count',
     '#default_value' => t(isset($gallery_info['gallery_info']['carousel_settings']['display']) ? $gallery_info['gallery_info']['carousel_settings']['display'] : 1),
     '#type' => 'textfield',
+    '#attributes' => array('class' =>'input_carousel_display send_to_cb_parents'),
     '#description' => t('How many pictures do you want visible? This number should be divisible by the total amount of pictures. 
     	If this number is not divisible by the total amount of images, the carousel will behave as if "single incremental slide" is checked.'),
     '#size' => 2,
   );
   $form['gallery_info']['carousel_settings']['move_amount'] = array(
     '#title' => t('Auto-slide, one image at a time.'),
+    '#attributes' => array('class' =>'input_carousel_move_amount send_to_cb_parents'),
     '#default_value' => (isset($gallery_info['gallery_info']['carousel_settings']['move_amount']) ? $gallery_info['gallery_info']['carousel_settings']['move_amount'] : ''),
     '#type' => 'checkbox',
   );
   $form['gallery_info']['carousel_settings']['controls'] = array(
     '#title' => t('Display "Prev and Next" buttons.'),
+    '#attributes' => array('class' =>'input_carousel_controls send_to_cb_parents'),
     '#default_value' => (isset($gallery_info['gallery_info']['carousel_settings']['controls']) ? $gallery_info['gallery_info']['carousel_settings']['controls'] : ''),
     '#type' => 'checkbox',
   );
   $form['gallery_info']['carousel_settings']['pager'] = array(
     '#title' => t('Display numbered pager buttons'),
+    '#attributes' => array('class' =>'input_carousel_pager send_to_cb_parents'),
     '#default_value' => (isset($gallery_info['gallery_info']['carousel_settings']['pager']) ? $gallery_info['gallery_info']['carousel_settings']['pager'] : ''),
     '#type' => 'checkbox',
   );
   $form['gallery_info']['carousel_settings']['overlay'] = array(
     '#title' => t('Display an overlay over part of the image.'),
+    '#attributes' => array('class' =>'input_carousel_overlay send_to_cb_parents'),
     '#default_value' => (isset($gallery_info['gallery_info']['carousel_settings']['overlay']) ? $gallery_info['gallery_info']['carousel_settings']['overlay'] : ''),
     '#type' => 'checkbox',
   );
   $form['gallery_info']['carousel_settings']['overlay_toggle'] = array(
     '#title' => t('Toggle overlay on mouse over?'),
+    '#attributes' => array('class' =>'input_carousel_overlay_toggle send_to_cb_parents'),
     '#default_value' => (isset($gallery_info['gallery_info']['carousel_settings']['overlay_toggle']) ? $gallery_info['gallery_info']['carousel_settings']['overlay_toggle'] : ''),
     '#type' => 'checkbox',
   );
   $form['gallery_info']['carousel_settings']['shadowbox'] = array(
     '#title' => t('When a featured image is clicked, open a Shadowbox.'),
+    '#attributes' => array('class' =>'input_carousel_shadowbox send_to_cb_parents'),
     '#default_value' => (isset($gallery_info['gallery_info']['carousel_settings']['shadowbox']) ? $gallery_info['gallery_info']['carousel_settings']['shadowbox'] : ''),
     '#type' => 'checkbox',
   );
   $form['gallery_info']['carousel_settings']['overlay_height'] = array(
     '#title' => t('Overlay height'),
+    '#attributes' => array('class' =>'input_carousel_overlay_height send_to_cb_parents'),
     '#default_value' => (isset($gallery_info['gallery_info']['carousel_settings']['overlay_height']) ? $gallery_info['gallery_info']['carousel_settings']['overlay_height'] : 150),
     '#type' => 'textfield',
     '#description' => t('Overlay height in pixels.'),
@@ -528,6 +547,7 @@ function cb_gallery_form($node, $form_state) {
   );
   $form['gallery_info']['carousel_settings']['overlay_y'] = array(
     '#title' => t('Y position'),
+    '#attributes' => array('class' =>'input_carousel_overlay_y send_to_cb_parents'),
     '#default_value' => (isset($gallery_info['gallery_info']['carousel_settings']['overlay_y']) ? $gallery_info['gallery_info']['carousel_settings']['overlay_y'] : 0),
     '#type' => 'textfield',
     '#description' => t('Y position in percent. Values 0-50 equal position top. Values 51-100 equal position bottom.'),//TODO : Wha?? Explain this better.... 
@@ -537,6 +557,7 @@ function cb_gallery_form($node, $form_state) {
     '#title' => 'Interval Time',
     '#default_value' => t(isset($gallery_info['gallery_info']['carousel_settings']['interval_time']) ? $gallery_info['gallery_info']['carousel_settings']['interval_time'] : 4000),
     '#type' => 'textfield',
+    '#attributes' => array('class' =>'input_carousel_interval_timesend_to_cb_parents'),
     '#description' => t('Pause time (in seconds) between image transitions.'),
     '#size' => 4,
   );
@@ -544,6 +565,7 @@ function cb_gallery_form($node, $form_state) {
     '#title' => 'Duration',
     '#default_value' => (isset($gallery_info['gallery_info']['carousel_settings']['duration']) ? $gallery_info['gallery_info']['carousel_settings']['duration'] : 1000),
     '#type' => 'textfield',
+    '#attributes' => array('class' =>'input_carousel_duration send_to_cb_parents'),
     '#description' => t('Time (in seconds) to complate the image transition. (Smaller number = faster)'),
     '#size' => 4,
   );
@@ -551,10 +573,12 @@ function cb_gallery_form($node, $form_state) {
     '#title' => 'Flickr Set',
     '#default_value' => t(isset($gallery_info['gallery_info']['carousel_settings']['flickr_set']) ? $gallery_info['gallery_info']['carousel_settings']['flickr_set'] : ''),
     '#type' => $flickr_type,
+    '#attributes' => array('class' =>'input_carousel_flickr_set send_to_cb_parents'),
     '#description' => t('Flickr Set ID. If you want to pull images from Flickr, put the SET ID here.'),
   );
   $form['gallery_info']['carousel_settings']['flickr_api'] = array(
     '#title' => 'Flickr API',
+    '#attributes' => array('class' =>'input_carousel_flickr_api send_to_cb_parents'),
     '#default_value' =>  t(isset($gallery_info['gallery_info']['carousel_settings']['flickr_api']) ? $gallery_info['gallery_info']['carousel_settings']['flickr_api'] : ''),
     '#type' => (module_exists('flickrapi') ? 'textfield' : 'hidden'),
     '#description' => t('Flickr API Key. To pull from your Flickr feed, you must have a valid Flickr API KEY. '),
@@ -567,7 +591,7 @@ function cb_gallery_form($node, $form_state) {
       '#title'=> t('Thumbnail width (in pixels), by which to constrain the thumbnail images'),
       '#type'=> 'textfield',
       '#description' => t('NON NUMERIC CHARs WILL BE REMOVED. (eg. \'px\') The width is manually controlled here, while the height will be automatically calculated based on the aspect ratio selected above.'),
-      '#attributes' => array('class' =>'input_thumbnail_width'),
+      '#attributes' => array('class' =>'input_thumbnail_width send_to_cb_parents'),
       '#default_value' => $gallery_info['gallery_info']['thumbnail_width'],
       '#required' => TRUE,
   );
@@ -576,9 +600,9 @@ function cb_gallery_form($node, $form_state) {
       '#title'=> t('CSS class to put in outermost div. (Makes styleing/themeing easier.)'),
       '#type'=> 'textfield',
       '#description' => t('Space delimited CSS class names. The text entered in here will be placed in the "class" attribute of the outermost div surrounding this node. ie. It\'s Block. '),
-      '#attributes' => array('class' =>'input_unique_css_block_class'),
+      '#attributes' => array('class' =>'input_unique_css_block_class send_to_cb_parents'),
       '#default_value' => $gallery_info['gallery_info']['unique_css_block_class'],
-      '#required' => FALSE
+      '#required' => FALSE,
   );
   
   if(isset($node->nid)) { // Being EDITed. Not ADDed.
@@ -603,7 +627,7 @@ function cb_gallery_form($node, $form_state) {
       '#title'=> t('Human Readable Name For This Image or Video'),
       '#type'=> 'textfield',
       '#description' => t('This name is used in the alt tag for images and thumbnails. example: Picture of the Collegeboard Content Editors.'),
-      '#attributes' => array('class' =>'input_image_name'),
+      '#attributes' => array('class' =>'input_image_name send_to_cb_children'),
       '#required' => FALSE
       );
       
@@ -611,14 +635,14 @@ function cb_gallery_form($node, $form_state) {
       '#title'=> t('Optional Image Caption (HTML okay)'),
       '#type'=> 'textarea',
       '#description' => t('Use create a caption for this image. Leave blank if you do not want a caption.'),
-      '#attributes' => array('class' =>'input_image_caption'),
+      '#attributes' => array('class' =>'input_image_caption send_to_cb_children'),
       '#required' => FALSE
       );
       
     $form['new_media']['thumbnail_path'] = array(
       '#title' => t('Thumbnail Image URL'),
       '#type' => 'textfield',
-      '#attributes' => array('class' =>'input_thumbnail_path'),
+      '#attributes' => array('class' =>'input_thumbnail_path send_to_cb_children'),
       '#description' => t('Use this field to define a thumbnail image to use for this Image or Video.'),
       '#required' => FALSE
       );
@@ -628,7 +652,7 @@ function cb_gallery_form($node, $form_state) {
       '#description' => t('ALL images should be hosted elsewhere, already cropped to your desired aspect ratio.'),
       '#type'=> 'radios',
       '#options' => array(t('image')=>'Image.', t('video')=>'Video.'),
-      '#attributes' => array('class' =>'input_object_type'),
+      '#attributes' => array('class' =>'input_object_type send_to_cb_children'),
       '#required' => FALSE
       );
       
@@ -654,14 +678,14 @@ function cb_gallery_form($node, $form_state) {
       '#title'=> t('Remote Image URL'),
       '#type'=> 'textfield',
       '#description' => t('Remote Image URL'),
-      '#attributes' => array('class' =>'input_remote_image'),
+      '#attributes' => array('class' =>'input_remote_image send_to_cb_children'),
       );
       
     $form['new_media']['add_video']['video_embed_code'] = array(
       '#title'=> t('Video Embed Code'),
       '#type'=> 'textarea',
       '#description' => t('Paste your video embed code here.'),
-      '#attributes' => array('class' =>'input_video_embed_code'),
+      '#attributes' => array('class' =>'input_video_embed_code send_to_cb_children'),
       );
       
     $form['new_media']['submit_edit_media'] = array(
@@ -686,14 +710,14 @@ function cb_gallery_form($node, $form_state) {
       '#title'=> t('Video Embed Code'),
       '#type'=> 'hidden',
       '#description' => t('edit_media_id'),
-      '#attributes' => array('class' =>'edit_media_id')
+      '#attributes' => array('class' =>'edit_media_id send_to_cb_children')
       );
       
     $form['gallery_nid'] = array(
       '#title'=> t('Gallery NID'),
       '#type'=> 'hidden',
       '#description' => t('gallery_nid'),
-      '#attributes' => array('class' =>'gallery_nid'),
+      '#attributes' => array('class' =>'gallery_nid send_to_cb_children send_to_cb_parents'),
       '#default_value' => $node->nid
       );
         
@@ -713,14 +737,15 @@ function cb_gallery_form($node, $form_state) {
     $form['gallery_info']['update_gallery'] = array(
       '#type' => 'button',
       '#value' => t('Save Gallery Info'),
+      '#attributes' => array('class' =>'input_update_gallery', 'onclick' => 'return false;'),
       '#prefix'=> '<div id="cb_gallery_status"></div>',
-      '#ahah' => array(
+      /*'#ahah' => array(
         'event' => 'click', 
         'path' => 'admin/cb_gallery_ajax/update_gallery/'.$node->nid,
         'wrapper' => 'cb_gallery_status',
         'method' => 'replace',
         'effect' => 'fade'
-      )
+      )*/
     );
   }
   return $form;
@@ -847,7 +872,7 @@ function cb_gallery_preprocess_node(&$variables) {
   
   // Pull the gallery info data.
   $cb_gallery = _get_cb_gallery_info($variables['nid'], $single_new_item = NULL);
-  
+dsm($cb_gallery);
   // Set Defaults.
   $default_vid_width = 853;
   $default_vid_height =  480;
@@ -871,9 +896,6 @@ function cb_gallery_preprocess_node(&$variables) {
     case "1:1":
       $cb_gallery['gallery_info']['thumbnail_height'] = $cb_gallery['gallery_info']['thumbnail_width'];
     break;
-  }
-  function _get_file_extension($filename){
-    return pathinfo($filename, PATHINFO_EXTENSION);
   }
   // First we check if media exists at all.
   if(isset($cb_gallery['media'])) {
@@ -906,7 +928,6 @@ function cb_gallery_preprocess_node(&$variables) {
       $media_extention = _get_file_extension($media_content);
       $shadowbox_trigger = ''; // Replaced with rel="shadowbox;height...etc.."
       $overlay = ''; // Replaced with overlay markup.
-      
       // Pull actual image dimentions using this function...?
       list($img_actual_width, $img_actual_height) = getimagesize($media_content);
       
