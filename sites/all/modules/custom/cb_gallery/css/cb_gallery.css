@@ -196,7 +196,7 @@ div.thumbport ul li{
   float:left;
   background:none;
 }
-ul.thumbport li p{
+div.thumbport ul li p{
   padding:0;
   margin:0;
   overflow:hidden;

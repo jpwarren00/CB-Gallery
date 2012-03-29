@@ -148,29 +148,36 @@ function cb_gallery_ajax_update_gallery($nid) {
     'viewport_shadowbox' => FILTER_SANITIZE_SPECIAL_CHARS,
     'thumbnail_width' =>FILTER_SANITIZE_NUMBER_INT,
     'unique_css_block_class' => FILTER_SANITIZE_SPECIAL_CHARS,
-    'nivo_pauseTime'          => FILTER_SANITIZE_NUMBER_INT,
-    'nivo_startPaused'        => FILTER_SANITIZE_SPECIAL_CHARS,
-    'nivo_directionNav'       => FILTER_SANITIZE_SPECIAL_CHARS,
-    'nivo_progressBar'        => FILTER_SANITIZE_SPECIAL_CHARS,
+    'carousel_height' => FILTER_SANITIZE_SPECIAL_CHARS,
+    'width' => FILTER_SANITIZE_SPECIAL_CHARS,
+    'display' => FILTER_SANITIZE_SPECIAL_CHARS,
+    'move_amount' => FILTER_SANITIZE_SPECIAL_CHARS,
+    'controls' => FILTER_SANITIZE_SPECIAL_CHARS,
+    'pager' => FILTER_SANITIZE_SPECIAL_CHARS,
+    'overlay' => FILTER_SANITIZE_SPECIAL_CHARS,
+    'overlay_toggle' => FILTER_SANITIZE_SPECIAL_CHARS,
   );
   $clean = filter_input_array(INPUT_POST,$args);
   $will_be_json = array(
-  'nivo_animSpeed'=>$clean['nivo_animSpeed'],
-  'nivo_pauseTime'=>$clean['nivo_pauseTime'],
-  'nivo_startPaused'=>$clean['nivo_startPaused'],
-  'nivo_directionNav'=>$clean['nivo_directionNav'],
-  'nivo_progressBar'=>$clean['nivo_progressBar'],
+    'height'=>$clean['height'],
+    'width'=>$clean['width'],
+    'display'=>$clean['display'],
+    'move_amount'=>$clean['move_amount'],
+    'controls'=>$clean['controls'],
+    'pager'=>$clean['pager'],
+    'overlay'=>$clean['overlay'],
+    'overlay_toggle'=>$clean['overlay_toggle'],
   );
+  $clean['carousel_2_serialized_settings'] = serialize($will_be_json);
   
-  // Unsetting the nivo data is quicker than rewriting the SQL args... :/
-  unset($clean['nivo_animSpeed'],$clean['nivo_pauseTime'],$clean['nivo_startPaused'],$clean['nivo_directionNav'],$clean['nivo_progressBar']);
-  
-  $clean['nivo_gallery_json'] = serialize($will_be_json);
-  
+  // Unsetting the carousel_2 vars is quicker than rewriting the SQL args... :/
+  unset($clean['height'],$clean['width'],$clean['display'],$clean['move_amount'],$clean['controls'],$clean['pager'],$clean['overlay'],$clean['overlay_toggle']);
   array_push($clean,$nid); // add the galleryID last.
-  $sql    = "UPDATE {cb_gallery_parents} SET thumbnail_aspect_ratio='%s', viewport_shadowbox='%s', thumbnail_width='%s', unique_css_block_class='%s', nivo_gallery_json='%s' WHERE nid = '%d';";
-  db_query($sql, $clean); 
-  return drupal_json(array('status' => TRUE, 'data' => '<div class="status">Gallery info saved</div>'));
+  
+  $sql    = "UPDATE {cb_gallery_parents} SET thumbnail_aspect_ratio='%s', viewport_shadowbox='%s', thumbnail_width='%s', unique_css_block_class='%s', carousel_2_serialized_settings='%s' WHERE nid = '%d';";
+  $result = db_query($sql, $clean);
+  
+  return drupal_json(array('status' => TRUE, 'data' => '('.$clean['display'].'<div class="status">Gallery info saved</div>'));
 }
 /**
  * @_get_cb_gallery_info($nid, $single_new_item = NULL)
@@ -395,9 +402,9 @@ function cb_gallery_form($node, $form_state) {
   // Get gallery data.
   if(isset($node->nid)) {
     $gallery_info = _get_cb_gallery_info($node->nid, NULL);
-    $gallery_info['gallery_info']['carousel_settings'] = (isset($gallery_info['gallery_info']['carousel_2_serialized_settings']) ? unserialize($gallery_info['gallery_info']['carousel_2_serialized_settings']): NULL);
+    $gallery_info['gallery_info']['carousel_settings'] = (isset($gallery_info['gallery_info']['carousel_2_serialized_settings']) ? unserialize($gallery_info['gallery_info']['carousel_2_serialized_settings']): 'poo');
+    dsm(unserialize($gallery_info['gallery_info']['carousel_2_serialized_settings']));
   }
-  dsm($gallery_info['gallery_info']['carousel_settings'] );
   $form['gallery_info'] = array(
     '#title' => t('Gallery Information'),
     '#type' => 'fieldset',
@@ -460,7 +467,7 @@ function cb_gallery_form($node, $form_state) {
     '#collapsed' => FALSE,
     '#tree' => TRUE,
   );
-  $form['gallery_info']['carousel_settings']['carousel_height'] = array(
+  $form['gallery_info']['carousel_settings']['height'] = array(
     '#title' => 'Height',
     '#default_value' => t(isset($gallery_info['gallery_info']['carousel_settings']['height']) ? $gallery_info['gallery_info']['carousel_settings']['height'] : 300),
     '#type' => 'textfield',
@@ -759,6 +766,59 @@ function cb_gallery_nodeapi(&$node, $op, $a3 = NULL, $a4 = NULL){
   }
 }
 
+
+
+/**
+ * Flickr API processing.
+ * Used to process Flickr feeds.
+ */
+function _getSlidesFromFlickrFeed($carousel_2_settings = NULL) {
+  if(!isset($carousel_2_settings)) {
+    return FALSE;
+  }
+  // Require the Flikr API to continue
+  require_once(drupal_get_path('module', 'flickrapi').'/phpFlickr/phpFlickr.php');
+  
+  $f = new phpFlickr($carousel_2_settings['flickr_api']);
+  $flickr = $f->photosets_getPhotos($carousel_2_settings['flickr_set'], $extras = null, $privacy_filter = null, $per_page = null, $page = null, $media = null);
+  
+  // Loop through each image from the flickr feed.
+  foreach ($flickr['photoset']['photo'] as $key => $photo) {
+    $photo_title = $photo['title'];
+    $photo_title = str_replace(' ', '_', $photo['title']);
+    $photo_url = $photo['id'];
+    $photo_url_s = $f->buildPhotoURL($photo, $size = "Thumbnail");
+    $photo_url_l = $f->buildPhotoURL($photo, $size = "Medium 640");
+    $photo_url_xl = $f->buildPhotoURL($photo, $size = "Large");
+      
+      list($img_actual_width, $img_actual_height) = getimagesize($photo_url_xl);
+      // JH - Effing idiot! do this math once outside the loop. Sorry to all
+      // JH - programmers everywhere.
+      // DS - I am not quite clear why we use the % here.
+      if($carousel_2_settings['pager'] == 1) {
+        if($key % $carousel_2_settings['display'] == 0) {
+          $page_count++;
+          $pager_list_items .= '<li><a rel="'.($page_count).'" class="pagenum" href="#">'.$page_count.'</a></li>';
+        }  	
+      }
+      
+      if($carousel_2_settings['shadowbox'] == 1) { 
+        $rel = 'shadowbox[carousel_'.$item_id.'];height='.$img_actual_height.';width='.$img_actual_width.';';
+      }
+      $carousel_slides .= '<li class="item_image" rel=" ' . $page_count . '">';
+      $carousel_slides .= '<a href="' . $link . '" rel="' . $rel . '">';
+      $carousel_slides .= '<a href="' . $photo_url_xl . '" rel="">';
+      if($carousel_2_settings['overlay'] == 1 && !empty($overlay)) { 
+        $carousel_slides .= '<div class="overlay">' . $overlay . '</div>';
+      } 
+      $carousel_slides .= '<img title="' . $photo_title . '" alt="' . $photo_url_xl . '" src="' . $photo_url_l . '"/>';
+      $carousel_slides .= '</a></li>';
+  }
+  return $carousel_slides;
+}
+
+
+
 /**
  * Implementation of hook_preprocess_node().
  *
@@ -774,12 +834,11 @@ function cb_gallery_nodeapi(&$node, $op, $a3 = NULL, $a4 = NULL){
 function cb_gallery_preprocess_node(&$variables) {
 
   // Add JS and CSS required to view this node.
-  drupal_add_css(drupal_get_path('module', 'cb_gallery') . '/css/cb_gallery.css');
-  drupal_add_js(drupal_get_path('module', 'cb_gallery') . '/js/cb_gallery.js');
-  //TODO: 
-  //REPLACE WITH Carousel 2 //
-  //drupal_add_css(drupal_get_path('module', 'cb_gallery') . '/js/carousel_2-gallery/nivo-gallery.css');
-  //drupal_add_js(drupal_get_path('module', 'cb_gallery') . '/js/carousel_2-gallery/jquery.nivo.gallery.js');
+  drupal_add_css(drupal_get_path('module', 'cb_gallery') . '/css/cb_gallery.css');// should not be the same CSS as the admin CSS.
+  drupal_add_js(drupal_get_path('module', 'cb_gallery') . '/js/cb_gallery.js');   // should not be the same JS as the admin JS.
+  drupal_add_css(drupal_get_path('module', 'cb_gallery') . '/include/carousel_2/css/carousel_2.css');
+  drupal_add_js(drupal_get_path('module', 'cb_gallery') . '/include/carousel_2/js/jquery.tinycarousel.js');
+  drupal_add_js(drupal_get_path('module', 'cb_gallery') . '/include/carousel_2/js/carousel_2.js');
 
   // Set the template files to load the node template.
   if ($variables['node']->cb_gallery) {
@@ -814,8 +873,7 @@ function cb_gallery_preprocess_node(&$variables) {
     break;
   }
   function _get_file_extension($filename){
-    $x =  pathinfo($filename, PATHINFO_EXTENSION);
-    return $x['extension'];
+    return pathinfo($filename, PATHINFO_EXTENSION);
   }
   // First we check if media exists at all.
   if(isset($cb_gallery['media'])) {
@@ -828,7 +886,15 @@ function cb_gallery_preprocess_node(&$variables) {
       
       // DS - Pull Carousel 2 Settings from their serialized column in the DB
       $carousel_2_settings = unserialize($cb_gallery['gallery_info']['carousel_2_serialized_settings']);
-      
+      $additionalCarousel_2vars = array('start' => '1',
+                                        'axis' => 'x',
+                                        'interval' => 'false',
+                                        'rewind' => 'false',
+                                        'animation' => 'true',
+                                        'callback' => null
+                                        );
+      $carousel_js_settings = array('carousel_2' => array_merge($carousel_2_settings,$additionalCarousel_2vars));
+      drupal_add_js($carousel_js_settings, 'setting');
        
       /*
        // Flickr Photo Preprocessing.
@@ -871,14 +937,14 @@ function cb_gallery_preprocess_node(&$variables) {
               }
               
               $carousel_slides .= '<li class="item_video" rel="' . $img_index . '">';
-              $carousel_slides .= '<a href="#border-box-' . $node->nid . '" rel="shadowbox[carousel_' . $node->nid . '];height=' . $img_actual_height . ';width=' . $img_actual_width . '">';
+              $carousel_slides .= '<a href="#border-box-' . $variables['nid']. '" rel="shadowbox[carousel_' . $variables['nid']. '];height=' . $img_actual_height . ';width=' . $img_actual_width . '">';
               if($carousel_2_settings['overlay'] == 1) { 
                 $carousel_slides .= '<div class="overlay"><?php print $overlay; ?></div>';
               } 
               $carousel_slides .= '</a>';
-              $carousel_slides .= '<div class="border-box" id="border-box-' . $node->nid . '">';
+              $carousel_slides .= '<div class="border-box" id="border-box-' . $variables['nid']. '">';
               $carousel_slides .= '<div class="videoContainer">';
-              $carousel_slides .= '<object type="application/x-shockwave-flash" id="swf-' . $node->nid . '" tabindex="0"
+              $carousel_slides .= '<object type="application/x-shockwave-flash" id="swf-' . $variables['nid']. '" tabindex="0"
                                       data="http://' . $_SERVER['HTTP_HOST'] . '/sites/all/modules/custom/flash_video/swf/homePlayer.swf"
                                       width="<?php print $width; ?>" height="<?php print $height; ?>">
                                       <param name="menu" value="false">
@@ -888,9 +954,9 @@ function cb_gallery_preprocess_node(&$variables) {
                                       <param name="bgcolor" value="#FFFFFF">
                                       <param name="quality" value="best">
                                       <param name="wmode" value="transparent">
-                                      <param name="flashvars" value="videoSrc=' . $media_content . '&amp;posterSrc=' . $thumbnail_path . '&amp;stopAndResetCallBack=stopAndResetVideo&amp;accessibleVideoId=accessibleVideoContent-' . $node->nid . '&amp;playVideoCallBack=playVideo&amp;videoStartCall=videoStart[' . $node->nid . ']&amp;videoStopCall=videoStop[' . $node->nid . ']&amp;showBigPlayBtn=true&amp;aSrcAccount=clgbcollegeboardcomprod">
+                                      <param name="flashvars" value="videoSrc=' . $media_content . '&amp;posterSrc=' . $thumbnail_path . '&amp;stopAndResetCallBack=stopAndResetVideo&amp;accessibleVideoId=accessibleVideoContent-' . $variables['nid']. '&amp;playVideoCallBack=playVideo&amp;videoStartCall=videoStart[' . $variables['nid']. ']&amp;videoStopCall=videoStop[' . $variables['nid']. ']&amp;showBigPlayBtn=true&amp;aSrcAccount=clgbcollegeboardcomprod">
                                     </object>
-                                    <div id="accessibleVideoContent-' . $node->nid . '" class="onlyScreenReaderVisible">
+                                    <div id="accessibleVideoContent-' . $variables['nid']. '" class="onlyScreenReaderVisible">
                                       <a href="http://media.collegeboard.com/digitalServices/video-player/nosca/Come-to-NOSCA-2012-Destination-Equity-071211-final.mp4">Download Video</a>
                                     </div>
                                   </div>
@@ -914,12 +980,12 @@ function cb_gallery_preprocess_node(&$variables) {
           case 'cb_gallery':
             // CAROUSEL WITH IMAGE
             if(!in_array($media_extention, $acceptable_image_formats)) {
-              drupal_set_message('error', 'Image format is unsupported.');
+              drupal_set_message('Image format is unsupported.', 'error');
             }
             // Is this using Shadowbox?
             if($carousel_2_settings['shadowbox'] == 1) {
               // If so, create the rel trigger for the makrup.
-              $shadowbox_trigger = ' rel="shadowbox[carousel_' . $node->nid . '];height=' . $img_actual_height . ';width=' . $img_actual_width . ';"';
+              $shadowbox_trigger = ' rel="shadowbox[carousel_' . $variables['nid']. '];height=' . $img_actual_height . ';width=' . $img_actual_width . ';"';
             }
             // Is this using an Overlay? 
             if($carousel_2_settings['overlay'] == 1 && !empty($overlay)) {
@@ -936,8 +1002,8 @@ function cb_gallery_preprocess_node(&$variables) {
             $carousel_slides .= '</li>';
           break;
           case 'thumbnails' :
-          // IMAGE IN THUMBNAILS 
-            $opening_thumbnail_a_tag = '<a href="' . $media['media_content'] . '" rel="shadowbox[' . $node->nid . '];" title="' . $media['media_caption'] . '" onclick="return false;">';
+          // IMAGE IN THUMBNAILS
+            $opening_thumbnail_a_tag = '<a href="' . $media['media_content'] . '" rel="shadowbox[' . $variables['nid'] . '];" title="' . $media['media_caption'] . '" onclick="return false;">';
           break;
           case 'cb_gallery':
             // IMAGE IN CB_GALLERY
@@ -974,7 +1040,7 @@ function cb_gallery_preprocess_node(&$variables) {
   $thumbport .= '</ul></div>';
   
   $variables['cb_gallery'] = $cb_gallery;
-  $variables['cb_gallery']['viewport'] = (isset($viewport_content) ? $viewport : NULL);
+  $variables['cb_gallery']['viewport'] = (isset($carousel_slides) ? $viewport : NULL);
   $variables['cb_gallery']['thumbport'] = (isset($thumbport_content) ? $thumbport : NULL);
 }
 
