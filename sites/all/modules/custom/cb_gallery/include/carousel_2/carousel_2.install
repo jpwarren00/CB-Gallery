@@ -1,0 +1,187 @@
+<?
+
+function carousel_2_schema() {
+ 
+ $schema['carousel_2_images'] = array(
+ 	 'description' => 'Content Type Carousel_2',
+   'fields' => array(
+   		'cid' => array(
+   			'type' => 'int',
+        'not null' => TRUE,
+   		),
+   		'weight' => array(
+   			'type' => 'int',
+        'not null' => TRUE,
+   		),
+ 			'img' => array(
+        'type' => 'text',
+        'not null' => TRUE,
+      ),
+      'img_tn' => array(
+        'type' => 'text',
+        'not null' => TRUE,
+      ),
+      'link' => array(
+        'type' => 'text',
+        'not null' => TRUE,
+      ),
+      'overlay_text' => array(
+        'type' => 'text',
+        'not null' => TRUE,
+      ),
+    ),
+ );
+ 
+ $schema['carousel_2'] = array(
+   'description' => 'Content Type Carousel_2',
+   'fields' => array(
+      'id' => array(
+        'type' => 'serial',
+        'not null' => TRUE,
+      ),
+      'nid' => array(
+        'type' => 'int',
+        'not null' => TRUE,
+      ),
+      'name' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+      ),
+      'height' => array(
+        'type' => 'int',
+        'not null' => TRUE,
+      ),
+      'width' => array(
+        'type' => 'int',
+        'not null' => TRUE,
+      ),
+      'display' => array(
+        'type' => 'int',
+        'not null' => TRUE,
+      ),
+      'interval_time' => array(
+        'type' => 'int',
+        'not null' => TRUE,
+      ),
+      'duration' => array(
+        'type' => 'int',
+        'not null' => TRUE,
+      ),
+      'overlay' => array(
+        'type' => 'int',
+        'size' => 'tiny',
+        'not null' => TRUE,
+      ),
+      'overlay_toggle' => array(
+        'type' => 'int',
+        'size' => 'tiny',
+        'not null' => TRUE,
+      ),
+      'overlay_height' => array(
+        'type' => 'int',
+        'size' => 'tiny',
+        'not null' => TRUE,
+      ),
+      'overlay_y' => array(
+        'type' => 'int',
+        'size' => 'tiny',
+        'not null' => TRUE,
+      ),
+      'move_amount' => array(
+        'type' => 'int',
+        'size' => 'tiny',
+        'not null' => TRUE,
+      ), 
+      'pager' => array(
+        'type' => 'int',
+        'size' => 'tiny',
+        'not null' => TRUE,
+      ), 
+      'controls' => array(
+        'type' => 'int',
+        'size' => 'tiny',
+        'not null' => TRUE,
+      ),
+      'shadowbox' => array(
+        'type' => 'int',
+        'not null' => TRUE,
+      ),
+      'flickr_set' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+      ), 
+      'flickr_api' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+      ),      
+   ),
+    'primary key' => array('id'),
+  );
+
+return $schema;
+
+}
+
+/**
+ * Implementation of hook_install().
+ */
+function carousel_2_install() {
+  drupal_install_schema('carousel_2');
+}
+
+/**
+ * Implementation of hook_uninstall().
+ */
+function carousel_2_uninstall() {
+ drupal_uninstall_schema('carousel_2');
+}
+
+function _carousel_2_add_table() {
+  $schema['carousel_2_images'] = array(
+ 	 'description' => 'Content Type Carousel_2',
+   'fields' => array(
+   		'cid' => array(
+   			'type' => 'int',
+        'not null' => TRUE,
+   		),
+   		'weight' => array(
+   			'type' => 'int',
+        'not null' => TRUE,
+   		),
+ 			'img' => array(
+        'type' => 'text',
+        'not null' => TRUE,
+      ),
+      'img_tn' => array(
+        'type' => 'text',
+        'not null' => TRUE,
+      ),
+      'link' => array(
+        'type' => 'text',
+        'not null' => TRUE,
+      ),
+      'overlay_text' => array(
+        'type' => 'text',
+        'not null' => TRUE,
+      ),
+    ),
+ );
+  $ret = array();
+  db_create_table($ret, 'carousel_2_images', $schema['carousel_2_images']);
+  return $ret;
+}
+
+
+function carousel_2_update_6200(){
+	if (!db_column_exists('carousel_2', 'flickr_set') || !db_column_exists('carousel_2', 'flickr_api')) {
+    db_add_field($ret, 'carousel_2', 'flickr_set', array('description' => t('Flickr Info'),'type' => 'varchar', 'length' => 255, 'not null' => TRUE));
+    db_add_field($ret, 'carousel_2', 'flickr_api', array('description' => t('Flickr Info'),'type' => 'varchar', 'length' => 255, 'not null' => TRUE));
+  }
+	if (!db_column_exists('carousel_2', 'move_amount')) {
+    db_add_field($ret, 'carousel_2', 'move_amount', array('description' => t('move 1 space or by the display amount.'),'type' => 'int', 'size' => 'tiny', 'not null' => TRUE));
+  }
+  _carousel_2_add_table();
+}
