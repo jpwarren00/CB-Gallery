@@ -62,7 +62,6 @@
                   .removeClass('noThumbport');
             break;
             case "carousel_2":
-               console.log('boosh');
                 $('#live_preview')
                   .addClass('viewport') //show viewport
                   .removeClass('noViewport')
@@ -115,9 +114,10 @@
     }
     
     // Helper functions
-    function set_cb_status(data){
-        $('#cb_gallery_sort_status').slideUp('slow',function(){          // Hide the Status
-            $('#cb_gallery_sort_status')
+    function set_cb_status(data, parents_or_children) {
+      var selector = (parents_or_children == (undefined || 'children') ? '#cb_gallery_sort_status' : '#cb_gallery_status');
+        $(selector).slideUp('slow',function(){          // Hide the Status
+            $(selector)
             .empty()                       // Clear the Status
             .addClass(data.message_class)  // Style the Status
             .html(data.message)            // Write the Status
@@ -138,9 +138,10 @@
         var thumbnail_aspect_ratio = $('input[name="thumbnail_aspect_ratio"]:checked').val(),
          viewport_shadowbox = $(this).val();
        refreshLivePreview(viewport_shadowbox, thumbnail_aspect_ratio);
+       console.log(viewport_shadowbox);
        switch(viewport_shadowbox){
           case 'carousel_2':
-          case 'cb_gallery':
+          case 'gallery':
                $('.carousel_2_settings_fieldset').show();
           break;
           default:
@@ -180,7 +181,7 @@
             dataType: 'json',
             data: data_to_post,
             success: function (data) {
-                 set_cb_status(data);
+                 set_cb_status(data,'parents');
                }
           });
      });
@@ -310,7 +311,6 @@
                       }
               );
       });
-      var delqueue = Array();
    // Delete Binding
     $('.media_delete').click(function(){
         $(this).parents('.dragable').addClass('being_deleted');// add class to the gallery element being edited.

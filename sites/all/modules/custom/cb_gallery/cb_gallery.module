@@ -170,14 +170,15 @@ function cb_gallery_ajax_update_gallery($nid) {
   );
   $clean['carousel_2_serialized_settings'] = serialize($will_be_json);
   
+  drupal_set_message($clean);
   // Unsetting the carousel_2 vars is quicker than rewriting the SQL args... :/
   unset($clean['height'],$clean['width'],$clean['display'],$clean['move_amount'],$clean['controls'],$clean['pager'],$clean['overlay'],$clean['overlay_toggle']);
   array_push($clean,$nid); // add the galleryID last.
   
   $sql    = "UPDATE {cb_gallery_parents} SET thumbnail_aspect_ratio='%s', viewport_shadowbox='%s', thumbnail_width='%s', unique_css_block_class='%s', carousel_2_serialized_settings='%s' WHERE nid = '%d';";
   $result = db_query($sql, $clean);
-  
-  return drupal_json(array('status' => TRUE, 'data' => '('.$clean['display'].'<div class="status">Gallery info saved</div>'));
+   $message = array('message_class'=>'status','message'=>t(join($clean).'Gallery info saved.'));
+  return drupal_json($message);
 }
 
 /**
@@ -317,6 +318,7 @@ function _render_gallery_gui_elements($nid, $gallery_info = NULL, $single_new_it
       $i++;
     }
   }
+  $reorder_gallery_gui.= '<div id="loading" style="background:#ccc;height:100px;width:100%;border:1px solid #F00;display:none;">Loading</div>';
   return $reorder_gallery_gui;
 }
 /**
