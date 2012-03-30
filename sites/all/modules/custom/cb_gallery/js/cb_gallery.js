@@ -6,6 +6,14 @@
  */
  $(function(){ // On Document Ready
     
+     $('#ajax_loading').ajaxStart(function() {
+        $(this).text('Loading...');
+        $(this).show();
+     });
+     $('#ajax_loading').ajaxStop(function() {
+        $(this).slideUp();
+     });
+    
    $('.viewport_trigger').click(function(){
       
       //$(this).parents('.thumbport').siblings('.nivoGallery').data('nivoGallery').goTo(Number($(this).attr('rel')));
@@ -115,9 +123,9 @@
     
     // Helper functions
     function set_cb_status(data, parents_or_children) {
-      var selector = (parents_or_children == (undefined || 'children') ? '#cb_gallery_sort_status' : '#cb_gallery_status');
-        $(selector).slideUp('slow',function(){          // Hide the Status
-            $(selector)
+      
+        $('#cb_gallery_sort_status').slideUp('slow',function(){          // Hide the Status
+            $(this)
             .empty()                       // Clear the Status
             .addClass(data.message_class)  // Style the Status
             .html(data.message)            // Write the Status
@@ -138,14 +146,22 @@
         var thumbnail_aspect_ratio = $('input[name="thumbnail_aspect_ratio"]:checked').val(),
          viewport_shadowbox = $(this).val();
        refreshLivePreview(viewport_shadowbox, thumbnail_aspect_ratio);
-       console.log(viewport_shadowbox);
        switch(viewport_shadowbox){
           case 'carousel_2':
-          case 'gallery':
-               $('.carousel_2_settings_fieldset').show();
+               $('.thumbnail_settings_fieldset').slideUp(function(){
+                    $('.carousel_2_settings_fieldset').slideDown();     
+               });
+               
           break;
-          default:
-               $('.carousel_2_settings_fieldset').hide();
+          case 'gallery':
+               $('.thumbnail_settings_fieldset').slideDown();
+               $('.carousel_2_settings_fieldset').slideDown();
+          break;
+          case 'thumbnails':
+               $('.carousel_2_settings_fieldset').slideUp(function(){
+                    $('.thumbnail_settings_fieldset').slideDown();     
+               });
+               
           break;
         }
     });
@@ -158,33 +174,6 @@
         $(this).hide();// Show the ADD TO GALLERY button.
         resetEditFormFields(); // clear the form and reset for Add
     });
-    
-    
-    /**
-     * Update CB_PARENTS table with new data.
-     */
-    $('.input_update_gallery').click(function(){
-          var  data_to_post = {};
-          var gallery_nid = $('.gallery_nid').val();
-          $('.send_to_cb_parents').each(function(){
-               var name = $(this).attr('name');
-               var val = $(this).val();
-               if(name != undefined) {
-                    if($(this).is(':checkbox, :radio')) {
-                         val = $('input[name=' + $(this).attr('name') + ']:checked').val();
-                    }
-               }
-          });
-          $.ajax({
-            type: "POST",
-            url: '/admin/cb_gallery_ajax/update_gallery/' + gallery_nid,
-            dataType: 'json',
-            data: data_to_post,
-            success: function (data) {
-                 set_cb_status(data,'parents');
-               }
-          });
-     });
     
     /**
      * Update CB_CHILDREN table with new data.

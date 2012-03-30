@@ -29,10 +29,20 @@ h3.gallery_title{
   margin-bottom: 7px;
   color: steelBlue;
 }
-
+#ajax_loading{
+	position:absolute;
+	top:0;
+	left: 0;
+	height:100%;
+	width:100%;
+	display:none;
+	background:#ccc;
+	border:1px solid green;
+}
 #my_cb_gallery{
   border:1px dashed #4D4D4D;
   padding:5px;
+  position:relative;
 }
 .being_edited{
   border:2px solid green !important;
@@ -104,9 +114,11 @@ h3.gallery_title{
 	height: auto;
 }
 #live_preview{
-  float: right;
-  height: 200px;
-  width: 260px;
+	float: right;
+	height: 200px;
+	width: 154px;
+	margin: 0 0 0 0;
+	padding: 0 10px;
 }
 
 #live_preview #preview_wrapper{
