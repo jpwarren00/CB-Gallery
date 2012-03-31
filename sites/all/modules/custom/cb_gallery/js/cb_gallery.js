@@ -6,11 +6,12 @@
  */
 $(function () { // On Document Ready
   $('#ajax_loading').ajaxStart(function () {
+   $(this).css('line-height', $('#my_cb_gallery').height() + 'px');
     $(this).text('Loading...');
-    $(this).show();
+    $(this).fadeIn('fast');
   });
   $('#ajax_loading').ajaxStop(function () {
-    $(this).slideUp();
+    $(this).fadeOut('fast');
   });
 
   $('.viewport_trigger').click(function () {

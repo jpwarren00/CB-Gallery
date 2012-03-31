@@ -30,14 +30,24 @@ h3.gallery_title{
   color: steelBlue;
 }
 #ajax_loading{
+	color:lightblue;
+	font-size:40px;
 	position:absolute;
 	top:0;
 	left: 0;
 	height:100%;
 	width:100%;
+	text-align:center; /*the property text-align with value middle for the center horizontal align*/
 	display:none;
-	background:#ccc;
 	border:1px solid green;
+	/* Fallback for web browsers that doesn't support RGBa */
+	background: rgb(9, 9, 9) transparent;
+	/* RGBa with 0.6 opacity */
+	background: rgba(9, 9, 9, 0.6);
+	/* For IE 5.5 - 7*/
+	filter:progid:DXImageTransform.Microsoft.gradient(startColorstr=#99000000, endColorstr=#99000000);
+	/* For IE 8*/
+	-ms-filter: "progid:DXImageTransform.Microsoft.gradient(startColorstr=#99000000, endColorstr=#99000000)";
 }
 #my_cb_gallery{
   border:1px dashed #4D4D4D;

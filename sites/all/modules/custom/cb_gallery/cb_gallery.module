@@ -201,7 +201,6 @@ function _get_cb_gallery_info($nid, $single_new_item = NULL) {
           $calculated_height = (!empty($thumbnail_settings['thumbnail_height']) ? $thumbnail_settings['thumbnail_height'] : 100);
         break;
       }
-      dsm($thumbnail_settings['thumbnail_height']);
       $return['gallery_info']['thumbnail_height'] = $calculated_height;
       $return['gallery_info']['thumbnail_width'] = $thumbnail_settings['thumbnail_width'];
       $return['gallery_info']['thumbnail_settings'] = $thumbnail_settings;
@@ -366,8 +365,8 @@ function _media_processing($gallery_nid) {
      // another way around this at the moment.
 
      // Pull the newest media_id.
-    $sql_getHTMLforGUI = "SELECT media_id FROM {cb_gallery_children} ORDER BY media_id DESC;";
-    $row = db_fetch_object(db_query_range($sql_getHTMLforGUI, 0, 1));
+    $sql_getHTMLforGUI = "SELECT media_id FROM {cb_gallery_children} ORDER BY media_id DESC LIMIT 1";
+    $row = db_fetch_object(db_query_range($sql_getHTMLforGUI));
     // Return HTML of single element.
     $return_media_json = array('return_media' => _render_gallery_gui_elements($gallery_nid, NULL, $row->media_id));
   }
