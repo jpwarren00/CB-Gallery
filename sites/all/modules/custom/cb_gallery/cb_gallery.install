@@ -1,5 +1,9 @@
 <?php
-//TODO: Add uninstall function to remove all nodes registerd with this nodetype.
+/**
+ * @file
+ * This file is contains the schema used to create the nessisairy tables in the
+ * database for this module.
+ */
 function cb_gallery_schema() {
   $schema = array();
   // Gallery Names
@@ -86,11 +90,10 @@ function cb_gallery_schema() {
   ); 
   return $schema;
 }
-function cb_gallery_install(){
+function cb_gallery_install() {
   drupal_install_schema('cb_gallery');
 }
-function cb_gallery_uninstall(){
+function cb_gallery_uninstall() {
   drupal_uninstall_schema('cb_gallery');
 }
 //end of file
-?>
