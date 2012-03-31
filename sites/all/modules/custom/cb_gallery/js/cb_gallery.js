@@ -26,27 +26,33 @@
      * Live Gallery Layout Preview
      */
     
-    function refreshLivePreview(viewport_shadowbox,thumbnail_aspect_ratio){
+    function refreshLivePreview(media_feature_type,thumbnail_aspect_ratio){
         
         // Set default viewport values incase arguments are missing. (which happens onload).
-        if(viewport_shadowbox == undefined && thumbnail_aspect_ratio == undefined){
-            viewport_shadowbox = $('input[name="viewport_shadowbox"]:checked').val(),
+        if(media_feature_type == undefined && thumbnail_aspect_ratio == undefined){
+            media_feature_type = $('input[name="media_feature_type"]:checked').val(),
             thumbnail_aspect_ratio = $('input[name="thumbnail_aspect_ratio"]:checked').val();
         }
         
+         $('#edit-thumbnail-settings-thumbnail-height-wrapper').hide();
         switch(thumbnail_aspect_ratio){
-            case "16:9":
-                $('#live_preview')
-                .addClass('sixteenByNine')
-                .removeClass('fourByThree')
-                .removeClass('oneToOne');
-                break;
             case "4:3":
                 $('#live_preview')
                 .addClass('fourByThree')
                 .removeClass('sixteenByNine')
                 .removeClass('oneToOne');
-                break;
+            break;
+            case "custom_height":
+               
+               $('#edit-thumbnail-settings-thumbnail-height-wrapper').show();
+               break;
+            case "auto":
+            case "16:9":
+               $('#live_preview')
+               .addClass('sixteenByNine')
+               .removeClass('fourByThree')
+               .removeClass('oneToOne');
+            break;
             case "1:1":
                 $('#live_preview')
                   .addClass('oneToOne')
@@ -54,13 +60,16 @@
                   .removeClass('fourByThree');
                 break;
         }
-        switch(viewport_shadowbox){
+        switch(media_feature_type){
             case "thumbnails":
                 $('#live_preview')
                   .addClass('noViewport')
                   .removeClass('viewport') //hide viewport
                   .addClass('showThumbport')//show thumbport
                   .removeClass('noThumbport');
+                   $('.carousel_2_settings_fieldset').slideUp(function(){
+                    $('.thumbnail_settings_fieldset').slideDown();     
+               });
             break;
             case "gallery":
                 $('#live_preview')
@@ -68,6 +77,8 @@
                   .removeClass('noViewport')
                   .addClass('showThumbport') //show thumbport
                   .removeClass('noThumbport');
+               $('.thumbnail_settings_fieldset').slideDown();
+               $('.carousel_2_settings_fieldset').slideDown();
             break;
             case "carousel_2":
                 $('#live_preview')
@@ -75,6 +86,13 @@
                   .removeClass('noViewport')
                   .removeClass('showThumbport')
                   .addClass('noThumbport'); //hide thumbport
+                  $('.thumbnail_settings_fieldset').slideUp(function(){
+                    $('.carousel_2_settings_fieldset').slideDown();     
+               });
+                  
+                $('.thumbnail_settings_fieldset').slideUp(function(){
+                    $('.carousel_2_settings_fieldset').slideDown();     
+               });
             break;
         }
     }
@@ -133,47 +151,6 @@
         });
     }
     
-    // Bind Thumbnail Aspect Ratio
-    $('input[name="thumbnail_aspect_ratio"]').click(function(){
-        var thumbnail_aspect_ratio = $(this).val(),
-        viewport_shadowbox = $('input[name="viewport_shadowbox"]:checked').val();
-        
-        refreshLivePreview(viewport_shadowbox, thumbnail_aspect_ratio);
-    });
-    
-    // Bind Viewport Toggle
-    $('input[name="viewport_shadowbox"]').click(function(){
-        var thumbnail_aspect_ratio = $('input[name="thumbnail_aspect_ratio"]:checked').val(),
-         viewport_shadowbox = $(this).val();
-       refreshLivePreview(viewport_shadowbox, thumbnail_aspect_ratio);
-       switch(viewport_shadowbox){
-          case 'carousel_2':
-               $('.thumbnail_settings_fieldset').slideUp(function(){
-                    $('.carousel_2_settings_fieldset').slideDown();     
-               });
-               
-          break;
-          case 'gallery':
-               $('.thumbnail_settings_fieldset').slideDown();
-               $('.carousel_2_settings_fieldset').slideDown();
-          break;
-          case 'thumbnails':
-               $('.carousel_2_settings_fieldset').slideUp(function(){
-                    $('.thumbnail_settings_fieldset').slideDown();     
-               });
-               
-          break;
-        }
-    });
-    
-    // Cancel Button Bindongs
-    $('.cancel_edit_media_button').click(function(){
-        $('.being_edited').removeClass('being_edited');
-        $('.being_cloned').removeClass('being_cloned'); 
-        $('.add_to_gallery_button').show();// Show the ADD TO GALLERY button.
-        $(this).hide();// Show the ADD TO GALLERY button.
-        resetEditFormFields(); // clear the form and reset for Add
-    });
     
     /**
      * Update CB_CHILDREN table with new data.
@@ -255,6 +232,31 @@
     }else{
         //$('#my_cb_gallery').sortable('disable');
     }
+    
+    // Bind Thumbnail Aspect Ratio
+    $('input[name="thumbnail_settings[thumbnail_aspect_ratio]"]').click(function(){
+        var thumbnail_aspect_ratio = $(this).val(),
+        media_feature_type = $('input[name="media_feature_type"]:checked').val();
+        
+        refreshLivePreview(media_feature_type, thumbnail_aspect_ratio);
+    });
+    
+    // Bind Viewport Toggle
+    $('input[name="media_feature_type"]').click(function(){
+        var thumbnail_aspect_ratio = $('input[name="thumbnail_aspect_ratio"]:checked').val(),
+         media_feature_type = $(this).val();
+       refreshLivePreview(media_feature_type, thumbnail_aspect_ratio);
+       
+    });
+    
+    // Cancel Button Bindongs
+    $('.cancel_edit_media_button').click(function(){
+        $('.being_edited').removeClass('being_edited');
+        $('.being_cloned').removeClass('being_cloned'); 
+        $('.add_to_gallery_button').show();// Show the ADD TO GALLERY button.
+        $(this).hide();// Show the ADD TO GALLERY button.
+        resetEditFormFields(); // clear the form and reset for Add
+    });
       // Edit Binding.
      $('.media_edit').click(function(obj){
          var media_id = $(this).parents('.dragable').attr('id').replace('img_','');
