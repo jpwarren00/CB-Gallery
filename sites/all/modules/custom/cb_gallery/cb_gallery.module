@@ -1,6 +1,26 @@
 <?php
 /**
  * @file
+ *
+ * Josh Hoegen - PLEASE BRANCH YOUR OWN VERSION! :D
+ * TODO:
+ * 1. Attempt to move the nessisity for "width" form field in the carousel
+ *    settings. The only 'user-hardcoded' widths should be the slides, and the
+ *    thumbnails. All wrapper div's need to be "auto." The goal here is to allow
+ *    the OUTER MOST DIV set the width, and have all child elements (except for
+ *    the IMAGES) react.
+ * 2. The carousel.js script that I have must be old. Please take a look at it
+ *    and update it where nessisairy. The image scrolling functionality is dated
+ *    and not functioning correctly.
+ * 3. Work to remove the nessisity for css.php files.  It limits the user to
+ *    only one carousel per page. Simply set easily overrideable defaults in
+ *    carousel_2.css. No hardcoded widths of wrapper div's, tho.
+ * 4. Add new video player to carousel/thumbnails. 
+ * 5. ... keep improving everything! :D
+ * 
+ *
+ *
+ * 
  * Collegeboard Gallery Module / Thumbgrid
  *
  * Author: Dean Shelton
@@ -290,7 +310,7 @@ function _render_gallery_gui_elements($nid, $gallery_info = NULL, $single_new_it
       $i++;
     }
   }
-  $reorder_gallery_gui .= '<div id="ajax_loading">Loading</div>';
+  $reorder_gallery_gui .= '<div id="ajax_loading"><img src="/' . drupal_get_path('module', 'cb_gallery') . '/img/loading2.gif"/>' . '</div>';
   return $reorder_gallery_gui;
 }
 /**
@@ -366,7 +386,7 @@ function _media_processing($gallery_nid) {
 
      // Pull the newest media_id.
     $sql_getHTMLforGUI = "SELECT media_id FROM {cb_gallery_children} ORDER BY media_id DESC LIMIT 1";
-    $row = db_fetch_object(db_query_range($sql_getHTMLforGUI));
+    $row = db_fetch_object(db_query($sql_getHTMLforGUI));
     // Return HTML of single element.
     $return_media_json = array('return_media' => _render_gallery_gui_elements($gallery_nid, NULL, $row->media_id));
   }
@@ -936,7 +956,7 @@ function cb_gallery_preprocess_node(&$variables) {
         // that it needs to load it's video player.
         if (isset($viewport_content)) {
           switch ($media_feature_type) {
-            case 'carousel':
+            case 'carousel_2':
             case 'gallery':
               // CAROUSEL WITH VIDEO
               if ($carousel_2_settings['pager']) {
@@ -981,7 +1001,7 @@ function cb_gallery_preprocess_node(&$variables) {
       // PREPROCESS IMAGE
       if ($media_type == 'image') {
         switch ($media_feature_type) {
-          case 'carousel' :
+          case 'carousel_2' :
           case 'gallery':
             // CAROUSEL WITH IMAGE
             if (!in_array($media_extention, $acceptable_image_formats)) {
@@ -998,7 +1018,7 @@ function cb_gallery_preprocess_node(&$variables) {
               $overlay = '<div class="overlay">' . $media_caption . '</div>';
             }
             // Begin the build of the LI elements that will make up the carousel.
-            $carousel_slides .= '<li class="item_image" rel="' . $page_count . '">';
+            $carousel_slides .= '<li class="item_image" rel="' . $img_index . '">';
             $carousel_slides .= '<a href="' . $media_content . '"' . $shadowbox_trigger . '>';// TODO: carousel images can link to pages.
             $carousel_slides .= $overlay;
             $carousel_slides .= '<img  src="' . $media_content . '" />';

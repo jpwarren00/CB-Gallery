@@ -7,7 +7,6 @@
 $(function () { // On Document Ready
   $('#ajax_loading').ajaxStart(function () {
    $(this).css('line-height', $('#my_cb_gallery').height() + 'px');
-    $(this).text('Loading...');
     $(this).fadeIn('fast');
   });
   $('#ajax_loading').ajaxStop(function () {

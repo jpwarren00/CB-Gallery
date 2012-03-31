@@ -147,6 +147,6 @@ $(document).ready(function(){
 	    Shadowbox.setup();
 	}
 	
-	//console.log(singleSlide);
+	console.log(singleSlide);
 });
 	

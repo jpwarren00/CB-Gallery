@@ -29,6 +29,10 @@ h3.gallery_title{
   margin-bottom: 7px;
   color: steelBlue;
 }
+
+#node-form .reorder_gallery_fieldset .fieldset-wrapper{
+	overflow:hidden;
+}
 #ajax_loading{
 	color:lightblue;
 	font-size:40px;
@@ -41,13 +45,19 @@ h3.gallery_title{
 	display:none;
 	border:1px solid green;
 	/* Fallback for web browsers that doesn't support RGBa */
-	background: rgb(9, 9, 9) transparent;
+	background: rgb(0, 0, 0) transparent;
 	/* RGBa with 0.6 opacity */
-	background: rgba(9, 9, 9, 0.6);
+	background: rgba(0, 0, 0, 0.6);
 	/* For IE 5.5 - 7*/
 	filter:progid:DXImageTransform.Microsoft.gradient(startColorstr=#99000000, endColorstr=#99000000);
 	/* For IE 8*/
 	-ms-filter: "progid:DXImageTransform.Microsoft.gradient(startColorstr=#99000000, endColorstr=#99000000)";
+}
+#ajax_loading img{
+	margin: 50% 0 0 0;
+	position: absolute;
+	width: auto !important;
+	height: auto !important;
 }
 #my_cb_gallery{
   border:1px dashed #4D4D4D;

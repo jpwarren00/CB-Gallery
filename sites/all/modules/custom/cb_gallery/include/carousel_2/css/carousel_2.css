@@ -2,6 +2,7 @@
 #carousel {
     height: 330px;
     width: 624px;
+    border:1px solid #ccc;
 }
 
 #carousel .viewport {
@@ -12,6 +13,8 @@
     border-top: none;
     margin: 0;
     padding: 0;
+    height: 100%;
+    width:100%
 }
 
 #carousel li {
@@ -37,8 +40,8 @@
 #carousel .overview li {
     float: left;
     padding: 0;
-	text-align: left;
-	background-image: none;
+    text-align: left;
+    background-image: none;
 }
 
 #carousel .viewport img {
