@@ -21,6 +21,12 @@ function cb_gallery_schema() {
         'length' => 10,
         'not null' => TRUE,
       ),
+      'display_title' => array(
+        'description' => 'Title to display with node.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => FALSE,
+      ),
       'unique_css_block_class' => array(
         'description' => 'CSS Class to put into the outermost div.',
         'type' => 'text',

@@ -3,6 +3,7 @@
  * @file
  *
  * Josh Hoegen - PLEASE BRANCH YOUR OWN VERSION! :D
+ * 
  * TODO:
  * 1. Attempt to move the nessisity for "width" form field in the carousel
  *    settings. The only 'user-hardcoded' widths should be the slides, and the
@@ -16,7 +17,7 @@
  *    only one carousel per page. Simply set easily overrideable defaults in
  *    carousel_2.css. No hardcoded widths of wrapper div's, tho.
  * 4. Add new video player to carousel/thumbnails. 
- * 5. ... keep improving everything! :D
+ * 5. ... Fix any of my own fuckups that you find. :D
  * 
  *
  *
@@ -80,9 +81,10 @@ function cb_gallery_ajax_edit_media($media_id) {
 
   // For safety, $row->media_content is HTML encoded when saved in the database.
   // Because of this, we must DEcode it to return the html content back to the
-  // json object. The add-slashes, and xss safety will be handeled by
-  // drupal_json();
-  $row->media_content = html_entity_decode($row->media_content);
+  // json object. 
+  $row->media_content = html_entity_decode($row->media_content, ENT_QUOTES);
+  $row->media_name = html_entity_decode($row->media_name, ENT_QUOTES);
+  $row->media_caption = html_entity_decode($row->media_caption, ENT_QUOTES);
   // There we go. All ready for the return.
   return drupal_json($row);
 }
@@ -175,6 +177,7 @@ function _get_cb_gallery_info($nid, $single_new_item = NULL) {
           cb_gallery_children.media_id,
           cb_gallery_children.media_sort_order,
           cb_gallery_parents.thumbnail_serialized_settings,
+          cb_gallery_parents.display_title,
           cb_gallery_parents.carousel_2_serialized_settings
           FROM {cb_gallery_parents}
           LEFT JOIN {cb_gallery_children}
@@ -227,14 +230,15 @@ function _get_cb_gallery_info($nid, $single_new_item = NULL) {
       $return['gallery_info']['carousel_settings'] = $carousel_settings;
       $return['gallery_info']['media_feature_type'] = $row->media_feature_type;
       $return['gallery_info']['unique_css_block_class'] = $row->unique_css_block_class;
+      $return['gallery_info']['display_title'] = html_entity_decode($row->display_title);
     }
 
     // Media data grows during iteration.
     if (!empty($row->media_id)) {
       $return['media'][$i]['media_id'] = $row->media_id;
-      $return['media'][$i]['media_name'] = $row->media_name;
+      $return['media'][$i]['media_name'] = html_entity_decode($row->media_name);
       $return['media'][$i]['media_content'] = html_entity_decode($row->media_content);
-      $return['media'][$i]['media_caption'] = $row->media_caption;
+      $return['media'][$i]['media_caption'] = html_entity_decode($row->media_caption);
       $return['media'][$i]['thumbnail_path'] = $row->thumbnail_path;
       $return['media'][$i]['media_sort_order'] = $row->media_sort_order;
       $return['media'][$i]['media_type'] = $row->media_type;
@@ -427,8 +431,8 @@ function cb_gallery_form($node, $form_state) {
     '#description' => t('Edit gallery specific information'),
     '#prefix' => '<div id="GalleryInformationTop"></div>',
     '#collapsible' => TRUE,
-    '#collapsed' => FALSE
-    );
+    '#collapsed' => FALSE,
+  );
 
   $form['gallery_info']['live_preview'] = array(
     '#value' => '
@@ -446,15 +450,24 @@ function cb_gallery_form($node, $form_state) {
       </div>
     </div>'
   );
-
-  $form['title'] = array(
-    '#title' => t('Gallery Name'),
+$form['title'] = array(
+    '#title' => t('Administrative title of this gallery'),
     '#type' => 'textfield',
     '#default_value' => $node->title,
-    '#description' => t('The name of this gallery.'),
-    '#attributes' => array('class' => 'input_gallery_name'),
+    '#description' => t('Only shown in admin pages, as a way to identify this piece of content.'),
+    '#attributes' => array('class' => 'input_gallery_title'),
     '#required' => TRUE,
     );
+  $form['display_title'] = array(
+    '#title' => t('Display title for this gallery.'),
+    '#type' => 'textfield',
+    '#description' => t('Leave blank to hide H6 tag from display. This title will be shown to end-users when viewing this gallery.'),
+    '#default_value' => (isset($gallery_info['gallery_info']['display_title']) ? $gallery_info['gallery_info']['display_title'] : NULL),
+    '#attributes' => array('class' => 'input_gallery_display_title'),
+    '#required' => FALSE,
+    '#weight' => 0,
+    );
+  
 
   $form['gallery_info']['media_feature_type'] = array(
     '#title' => t('Media Highlight Style'),
@@ -616,14 +629,13 @@ function cb_gallery_form($node, $form_state) {
     '#type' => (module_exists('flickrapi') ? 'textfield' : 'hidden'),
     '#description' => t('Flickr API Key. To pull from your Flickr feed, you must have a valid Flickr API KEY. '),
   );
-
   $form['gallery_info']['unique_css_block_class'] = array(
-      '#title' => t('CSS class to put in outermost div. (Makes styleing/themeing easier.)'),
-      '#type' => 'textfield',
-      '#description' => t('Space delimited CSS class names. The text entered in here will be placed in the "class" attribute of the outermost div surrounding this node. ie. It\'s Block. '),
-      '#attributes' => array('class' => 'input_unique_css_block_class'),
-      '#default_value' => $gallery_info['gallery_info']['unique_css_block_class'],
-      '#required' => FALSE,
+    '#title' => t('CSS class to put in outermost div. (Makes styleing/themeing easier.)'),
+    '#type' => 'textfield',
+    '#description' => t('Space delimited CSS class names. The text entered in here will be placed in the "class" attribute of the outermost div surrounding this node. ie. It\'s Block. '),
+    '#attributes' => array('class' => 'input_unique_css_block_class'),
+    '#default_value' => $gallery_info['gallery_info']['unique_css_block_class'],
+    '#required' => FALSE,
   );
 
   if (isset($node->nid)) { // Being EDITed. Not ADDed.
@@ -633,127 +645,127 @@ function cb_gallery_form($node, $form_state) {
     $reorder_gallery_gui .= '<div id="my_cb_gallery" class="clearfix" rel="' . $node->nid . '">';
     $reorder_gallery_gui .= _render_gallery_gui_elements($node->nid, $gallery_info, NULL);
     $reorder_gallery_gui .= '</div>';
+    
+  $form['new_media'] = array(
+    '#title' => t('Add New Image/Video'),
+    '#type' => 'fieldset',
+    '#description' => t('Go ahead and add an item to your gallery using the form below. If you want to edit an existing gallery item, scroll down and click the edit button of the gallery image you want to edit! It&#39;s that easy!'),
+    '#collapsible' => TRUE,
+    '#attributes' => array('class' => 'new_media_fieldset'),
+    '#prefix' => '<div id="NewMediaFormTop"></div>',
+    '#collapsed' => TRUE
+    );
 
-    $form['new_media'] = array(
-      '#title' => t('Add New Image/Video'),
-      '#type' => 'fieldset',
-      '#description' => t('Go ahead and add an item to your gallery using the form below. If you want to edit an existing gallery item, scroll down and click the edit button of the gallery image you want to edit! It&#39;s that easy!'),
-      '#collapsible' => TRUE,
-      '#attributes' => array('class' => 'new_media_fieldset'),
-      '#prefix' => '<div id="NewMediaFormTop"></div>',
-      '#collapsed' => TRUE
-      );
+  $form['new_media']['media_name'] = array(
+    '#title' => t('Human Readable Name For This Image or Video'),
+    '#type' => 'textfield',
+    '#description' => t('This name is used in the alt tag for images and thumbnails. example: Picture of the Collegeboard Content Editors.'),
+    '#attributes' => array('class' => 'input_image_name send_to_cb_children'),
+    '#required' => FALSE
+    );
 
-    $form['new_media']['media_name'] = array(
-      '#title' => t('Human Readable Name For This Image or Video'),
-      '#type' => 'textfield',
-      '#description' => t('This name is used in the alt tag for images and thumbnails. example: Picture of the Collegeboard Content Editors.'),
-      '#attributes' => array('class' => 'input_image_name send_to_cb_children'),
-      '#required' => FALSE
-      );
+  $form['new_media']['media_caption'] = array(
+    '#title' => t('Optional Image Caption (HTML okay)'),
+    '#type' => 'textarea',
+    '#description' => t('Use create a caption for this image. Leave blank if you do not want a caption.'),
+    '#attributes' => array('class' => 'input_image_caption send_to_cb_children'),
+    '#required' => FALSE
+    );
 
-    $form['new_media']['media_caption'] = array(
-      '#title' => t('Optional Image Caption (HTML okay)'),
-      '#type' => 'textarea',
-      '#description' => t('Use create a caption for this image. Leave blank if you do not want a caption.'),
-      '#attributes' => array('class' => 'input_image_caption send_to_cb_children'),
-      '#required' => FALSE
-      );
+  $form['new_media']['thumbnail_path'] = array(
+    '#title' => t('Thumbnail Image URL'),
+    '#type' => 'textfield',
+    '#attributes' => array('class' => 'input_thumbnail_path send_to_cb_children'),
+    '#description' => t('Use this field to define a thumbnail image to use for this Image or Video.'),
+    '#required' => FALSE
+    );
 
-    $form['new_media']['thumbnail_path'] = array(
-      '#title' => t('Thumbnail Image URL'),
-      '#type' => 'textfield',
-      '#attributes' => array('class' => 'input_thumbnail_path send_to_cb_children'),
-      '#description' => t('Use this field to define a thumbnail image to use for this Image or Video.'),
-      '#required' => FALSE
-      );
+  $form['new_media']['media_type'] = array(
+    '#title' => t('What type of meida are you adding to this gallery?'),
+    '#description' => t('ALL images should be hosted elsewhere, already cropped to your desired aspect ratio.'),
+    '#type' => 'radios',
+    '#options' => array(t('image') => 'Image.', t('video') => 'Video.'),
+    '#attributes' => array('class' => 'input_object_type send_to_cb_children'),
+    '#required' => FALSE
+    );
 
-    $form['new_media']['media_type'] = array(
-      '#title' => t('What type of meida are you adding to this gallery?'),
-      '#description' => t('ALL images should be hosted elsewhere, already cropped to your desired aspect ratio.'),
-      '#type' => 'radios',
-      '#options' => array(t('image') => 'Image.', t('video') => 'Video.'),
-      '#attributes' => array('class' => 'input_object_type send_to_cb_children'),
-      '#required' => FALSE
-      );
+  $form['new_media']['add_video'] = array(
+    '#title' => t('Add a Video'),
+    '#type' => 'fieldset',
+    '#description' => t('Add a video using this fieldset.'),
+    '#collapsible' => FALSE,
+    '#collapsed' => FALSE,
+    '#attributes' => array('class' => 'video_fieldset', 'style' => 'display:none;'),
+    );
 
-    $form['new_media']['add_video'] = array(
-      '#title' => t('Add a Video'),
-      '#type' => 'fieldset',
-      '#description' => t('Add a video using this fieldset.'),
-      '#collapsible' => FALSE,
-      '#collapsed' => FALSE,
-      '#attributes' => array('class' => 'video_fieldset', 'style' => 'display:none;'),
-      );
+  $form['new_media']['add_image'] = array(
+    '#title' => t('Add an Image'),
+    '#type' => 'fieldset',
+    '#description' => t('ALL images should be hosted elsewhere, already cropped to your desired aspect ratio.'),
+    '#collapsible' => FALSE,
+    '#collapsed' => FALSE,
+    '#attributes' => array('class' => 'image_fieldset', 'style' => 'display:none;'),
+    );
 
-    $form['new_media']['add_image'] = array(
-      '#title' => t('Add an Image'),
-      '#type' => 'fieldset',
-      '#description' => t('ALL images should be hosted elsewhere, already cropped to your desired aspect ratio.'),
-      '#collapsible' => FALSE,
-      '#collapsed' => FALSE,
-      '#attributes' => array('class' => 'image_fieldset', 'style' => 'display:none;'),
-      );
+  $form['new_media']['add_image']['remote_image'] = array(
+    '#title' => t('Remote Image URL'),
+    '#type' => 'textfield',
+    '#description' => t('Remote Image URL'),
+    '#attributes' => array('class' => 'input_remote_image send_to_cb_children'),
+    );
 
-    $form['new_media']['add_image']['remote_image'] = array(
-      '#title' => t('Remote Image URL'),
-      '#type' => 'textfield',
-      '#description' => t('Remote Image URL'),
-      '#attributes' => array('class' => 'input_remote_image send_to_cb_children'),
-      );
+  $form['new_media']['add_video']['video_embed_code'] = array(
+    '#title' => t('Video Embed Code'),
+    '#type' => 'textarea',
+    '#description' => t('Paste your video embed code here.'),
+    '#attributes' => array('class' => 'input_video_embed_code send_to_cb_children'),
+    );
 
-    $form['new_media']['add_video']['video_embed_code'] = array(
-      '#title' => t('Video Embed Code'),
-      '#type' => 'textarea',
-      '#description' => t('Paste your video embed code here.'),
-      '#attributes' => array('class' => 'input_video_embed_code send_to_cb_children'),
-      );
+  $form['new_media']['submit_edit_media'] = array(
+    '#type' => 'submit',
+    '#value' => t('Save Edits'),
+    '#attributes' => array('class' => 'submit_edit_media_button', 'style' => 'display:none', 'onclick' => 'return false;'),
+    );
+  $form['new_media']['add_media_button'] = array(
+    '#type' => 'submit',
+    '#value' => t('Add to Gallery'),
+    '#attributes' => array('class' => 'submit_new_media', 'onclick' => 'return false;')
+    );
 
-    $form['new_media']['submit_edit_media'] = array(
-      '#type' => 'submit',
-      '#value' => t('Save Edits'),
-      '#attributes' => array('class' => 'submit_edit_media_button', 'style' => 'display:none', 'onclick' => 'return false;'),
-      );
-    $form['new_media']['add_media_button'] = array(
-      '#type' => 'submit',
-      '#value' => t('Add to Gallery'),
-      '#attributes' => array('class' => 'submit_new_media', 'onclick' => 'return false;')
-      );
+  $form['new_media']['cancel_edit_media'] = array(
+    '#type' => 'submit',
+    '#value' => t('Cancel'),
+    '#prefix' => '&nbsp;&nbsp;&nbsp;',
+    '#attributes' => array('class' => 'cancel_edit_media_button', 'style' => 'display:none', 'onclick' => 'return false;')
+    );
 
-    $form['new_media']['cancel_edit_media'] = array(
-      '#type' => 'submit',
-      '#value' => t('Cancel'),
-      '#prefix' => '&nbsp;&nbsp;&nbsp;',
-      '#attributes' => array('class' => 'cancel_edit_media_button', 'style' => 'display:none', 'onclick' => 'return false;')
-      );
+  $form['edit_media_id'] = array(
+    '#title' => t('Video Embed Code'),
+    '#type' => 'hidden',
+    '#description' => t('edit_media_id'),
+    '#attributes' => array('class' => 'edit_media_id send_to_cb_children')
+    );
 
-    $form['edit_media_id'] = array(
-      '#title' => t('Video Embed Code'),
-      '#type' => 'hidden',
-      '#description' => t('edit_media_id'),
-      '#attributes' => array('class' => 'edit_media_id send_to_cb_children')
-      );
+  $form['gallery_nid'] = array(
+    '#title' => t('Gallery NID'),
+    '#type' => 'hidden',
+    '#description' => t('gallery_nid'),
+    '#attributes' => array('class' => 'gallery_nid send_to_cb_children'),
+    '#default_value' => $node->nid
+    );
 
-    $form['gallery_nid'] = array(
-      '#title' => t('Gallery NID'),
-      '#type' => 'hidden',
-      '#description' => t('gallery_nid'),
-      '#attributes' => array('class' => 'gallery_nid send_to_cb_children'),
-      '#default_value' => $node->nid
-      );
+  $form['reorder_gallery'] = array(
+    '#title' => t('Reorder Gallery'),
+    '#type' => 'fieldset',
+    '#description' => t('Reorder your gallery elements'),
+    '#collapsible' => TRUE,
+    '#attributes' => array('class' => 'reorder_gallery_fieldset'),
+    '#collapsed' => FALSE
+    );
 
-    $form['reorder_gallery'] = array(
-      '#title' => t('Reorder Gallery'),
-      '#type' => 'fieldset',
-      '#description' => t('Reorder your gallery elements'),
-      '#collapsible' => TRUE,
-      '#attributes' => array('class' => 'reorder_gallery_fieldset'),
-      '#collapsed' => FALSE
-      );
-
-    $form['reorder_gallery']['this_gallery'] = array(
-      '#value' => $reorder_gallery_gui
-      );
+  $form['reorder_gallery']['this_gallery'] = array(
+    '#value' => $reorder_gallery_gui
+    );
   }
   return $form;
 }
@@ -796,8 +808,8 @@ function cb_gallery_nodeapi(&$node, $op, $a3 = NULL, $a4 = NULL) {
         $thumbnail_serialized_settings = array();
         _serialize_thumbnail_and_carousel_settings($node, $carousel_2_serialized_settings, $thumbnail_serialized_settings);
 
-        $sql  = "UPDATE {cb_gallery_parents} SET  media_feature_type='%s', unique_css_block_class='%s', carousel_2_serialized_settings='%s', thumbnail_serialized_settings='%s' WHERE nid='%d';";
-        $args = array($node->media_feature_type, $node->unique_css_block_class, $carousel_2_serialized_settings, $thumbnail_serialized_settings, $node->nid);
+        $sql  = "UPDATE {cb_gallery_parents} SET  media_feature_type='%s', unique_css_block_class='%s', display_title='%s', carousel_2_serialized_settings='%s', thumbnail_serialized_settings='%s' WHERE nid='%d';";
+        $args = array($node->media_feature_type, $node->unique_css_block_class, $node->display_title, $carousel_2_serialized_settings, $thumbnail_serialized_settings, $node->nid);
         db_query($sql, $args);
       break;
       case 'insert':
@@ -812,8 +824,8 @@ function cb_gallery_nodeapi(&$node, $op, $a3 = NULL, $a4 = NULL) {
         $args = array($node->nid);
         db_query($sql, $args);
 
-        $sql  = "INSERT INTO {cb_gallery_parents} (nid,  media_feature_type,  unique_css_block_class, carousel_2_serialized_settings, thumbnail_serialized_settings) VALUES ('%d','%s','%s', '%s', '%s');";
-        $args = array($node->nid, $node->media_feature_type, $node->unique_css_block_class, $carousel_2_serialized_settings, $thumbnail_serialized_settings);
+        $sql  = "INSERT INTO {cb_gallery_parents} (nid,  media_feature_type, display_title, unique_css_block_class, carousel_2_serialized_settings, thumbnail_serialized_settings) VALUES ('%d','%s', '%s','%s', '%s', '%s');";
+        $args = array($node->nid, $node->media_feature_type, $node->display_title, $node->unique_css_block_class, $carousel_2_serialized_settings, $thumbnail_serialized_settings);
         db_query($sql, $args);
       break;
       case "view":
@@ -822,8 +834,6 @@ function cb_gallery_nodeapi(&$node, $op, $a3 = NULL, $a4 = NULL) {
     }
   }
 }
-
-
 
 /**
  * Flickr API processing.
@@ -847,29 +857,27 @@ function _getSlidesFromFlickrFeed($carousel_2_settings = NULL) {
     $photo_url_s = $f->buildPhotoURL($photo, $size = "Thumbnail");
     $photo_url_l = $f->buildPhotoURL($photo, $size = "Medium 640");
     $photo_url_xl = $f->buildPhotoURL($photo, $size = "Large");
-
-      list($img_actual_width, $img_actual_height) = getimagesize($photo_url_xl);
-      // JH - Effing idiot! do this math once outside the loop. Sorry to all
-      // JH - programmers everywhere.
-      // DS - I am not quite clear why we use the % here.
-      if ($carousel_2_settings['pager'] == 1) {
-        if ($key % $carousel_2_settings['display'] == 0) {
-          $page_count++;
-          $pager_list_items .= '<li><a rel="' . ($page_count) . '" class="pagenum" href="#">' . $page_count . '</a></li>';
-        }
+    list($img_actual_width, $img_actual_height) = getimagesize($photo_url_xl);
+    // JH - Effing idiot! do this math once outside the loop. Sorry to all
+    // JH - programmers everywhere.
+    // DS - I am not quite clear why we use the % here.
+    if ($carousel_2_settings['pager'] == 1) {
+      if ($key % $carousel_2_settings['display'] == 0) {
+        $page_count++;
+        $pager_list_items .= '<li><a rel="' . ($page_count) . '" class="pagenum" href="#">' . $page_count . '</a></li>';
       }
-
-      if ($carousel_2_settings['shadowbox'] == 1) {
-        $rel = 'shadowbox[carousel_' . $item_id . '];height=' . $img_actual_height . ';width=' . $img_actual_width . ';';
-      }
-      $carousel_slides .= '<li class="item_image" rel=" ' . $page_count . '">';
-      $carousel_slides .= '<a href="' . $link . '" rel="' . $rel . '">';
-      $carousel_slides .= '<a href="' . $photo_url_xl . '" rel="">';
-      if ($carousel_2_settings['overlay'] == 1 && !empty($overlay)) {
-        $carousel_slides .= '<div class="overlay">' . $overlay . '</div>';
-      }
-      $carousel_slides .= '<img title="' . $photo_title . '" alt="' . $photo_url_xl . '" src="' . $photo_url_l . '"/>';
-      $carousel_slides .= '</a></li>';
+    }
+    if ($carousel_2_settings['shadowbox'] == 1) {
+      $rel = 'shadowbox[carousel_' . $item_id . '];height=' . $img_actual_height . ';width=' . $img_actual_width . ';';
+    }
+    $carousel_slides .= '<li class="item_image" rel=" ' . $page_count . '">';
+    $carousel_slides .= '<a href="' . $link . '" rel="' . $rel . '">';
+    $carousel_slides .= '<a href="' . $photo_url_xl . '" rel="">';
+    if ($carousel_2_settings['overlay'] == 1 && !empty($overlay)) {
+      $carousel_slides .= '<div class="overlay">' . $overlay . '</div>';
+    }
+    $carousel_slides .= '<img title="' . $photo_title . '" alt="' . $photo_url_xl . '" src="' . $photo_url_l . '"/>';
+    $carousel_slides .= '</a></li>';
   }
   return $carousel_slides;
 }
@@ -910,7 +918,7 @@ function cb_gallery_preprocess_node(&$variables) {
   $is_using_viewport = (in_array($media_feature_type, array('gallery', 'carousel')) ? TRUE : FALSE);
   $is_using_thumbport = (in_array($media_feature_type, array('thumbnails', 'gallery')) ? TRUE : FALSE);
   $acceptable_image_formats = array('jpg', 'jpeg', 'png', 'gif');
-  $acceptable_video_formats = array('flv', 'mp4', 'ogg');
+  $acceptable_video_formats = array('webm', 'mp4', 'ogv');
   $pager_list_items =''; // Will be replaced with LI's used for paging buttons.
   $carousel_settings = $cb_gallery['gallery_info']['carousel_settings'];
   $additionalCarousel_2vars = array('start' => '1',
@@ -920,7 +928,7 @@ function cb_gallery_preprocess_node(&$variables) {
                                     'animation' => 'true',
                                     'callback' => NULL
                                     );
-  $carousel_js_settings = array('carousel_2' => array_merge($carousel_settings, $additionalCarousel_2vars));
+  $carousel_js_settings = (is_array($carousel_settings) ? array('carousel_2' => array_merge($carousel_settings, $additionalCarousel_2vars)) : $additionalCarousel_2vars);
   drupal_add_js($carousel_js_settings, 'setting');
   // First we check if media exists at all.
   if (isset($cb_gallery['media'])) {
@@ -929,77 +937,119 @@ function cb_gallery_preprocess_node(&$variables) {
     foreach ($cb_gallery['media'] as $media) {
       // Register ALL vars from {cb_gallery_children}.
       extract($media, EXTR_OVERWRITE);
-      /*
-       // Flickr Photo Preprocessing.
-       if (isset($carousel_2_settings['flickr_set']) && isset($carousel_2_settings['flickr_api'])) {
-        $carousel_slides = _getSlidesFromFlickrFeed($carousel_2_settings);
-      }
-      */
+      
+      // Flickr Photo Preprocessing.
+      //if (isset($carousel_2_settings['flickr_set']) && isset($carousel_2_settings['flickr_api'])) {
+      //  $carousel_slides = _getSlidesFromFlickrFeed($carousel_2_settings);
+      //}
       $media_extention = _get_file_extension($media_content);
       $shadowbox_trigger = ''; // Replaced with rel="shadowbox;height...etc.."
       $overlay = ''; // Replaced with overlay markup.
-      // Pull actual image dimentions using this function...?
-      list($img_actual_width, $img_actual_height) = getimagesize($media_content);
+      
+      // Add the pager if the users want it.
+      if ($carousel_2_settings['pager']) {
+        $pager_list_items .= '<li><a rel="' . $img_index . '" class="pagenum" href="#">' . $img_index . '</a></li>';
+      }
       // PREPROCESSING VIDEO
       if ($media_type == 'video') {
-        // Is this an HTML ready 5 video?
-        $html5_video = (preg_match('/\.(mp4|webm|ogv)/', trim($media_content), $v) ? TRUE : FALSE);
-        // If this is a video, lets try and grab as much data as we can.
-        if (preg_match('/^<iframe/', trim($media_content))) { // is this an iframe?
-          $embed_host = (preg_match('/(youtube|vimeo)"/i', $media_content, $e) ? $e[1] : 'unknown');
-          $vid_height = (preg_match('/height="([0-9 ] .*)"/i', $media_content, $h) ? $h[1] : $default_vid_height);
-          $vid_width = (preg_match('/width="([0-9 ] .*)"/i', $media_content, $w) ? $w[1] : $default_vid_width);
-          $vid_src = (preg_match('/src="(.*)"/i', $media_content, $s) ? $s[1] : NULL);
-        }
+        
+        // Add video.js source.
+        drupal_add_js('http://vjs.zencdn.net/c/video.js');
+        drupal_add_css('http://vjs.zencdn.net/c/video-js.css');
+        
+        $is_html5_video = (preg_match('/\.(mp4|webm|ogv)/', trim($media_content), $v) ? TRUE : FALSE);
+        $is_iframe_video = (preg_match('/^<iframe/', trim($media_content)) ? TRUE : FALSE);
+        $is_flash_video = (preg_match('/flv$/', trim($media_content)) ? TRUE : FALSE);
+        
         // Now that we have as much data as we can grab from the media_content
         // lets display the markup that will give the carousel_2 the elements
         // that it needs to load it's video player.
-        if (isset($viewport_content)) {
-          switch ($media_feature_type) {
-            case 'carousel_2':
-            case 'gallery':
-              // CAROUSEL WITH VIDEO
-              if ($carousel_2_settings['pager']) {
-                $pager_list_items .= '<li><a rel="' . $img_index . '" class="pagenum" href="#">' . $img_index . '</a></li>';
+        switch ($media_feature_type) {
+          case 'carousel_2':
+          case 'gallery':
+            
+            // CAROUSEL WITH VIDEO
+            
+            if ($is_html5_video) {
+              $player_type = 'html5';
+              $exploded_media_content = preg_split('/\R/', $media_content);
+              foreach ($exploded_media_content as $single_line) {
+                if (filter_var($single_line, FILTER_VALIDATE_URL)) {
+                  $ext =_get_file_extension($single_line);
+                  if (in_array($ext, $acceptable_video_formats)) {
+                    $video_src .= '<source src="' . $single_line . '" type="video/' . $ext . ' />';
+                  }
+                }
               }
-              $carousel_slides .= '<li class="item_video" rel="' . $img_index . '">';
-              $carousel_slides .= '<a href="#border-box-' . $variables['nid'] . '" rel="shadowbox[carousel_' . $variables['nid'] . '];height=' . $img_actual_height . ';width=' . $img_actual_width . '">';
-              if ($carousel_2_settings['overlay'] == 1) {
-                $carousel_slides .= '<div class="overlay"><?php print $overlay; ?></div>';
-              }
-              $carousel_slides .= '</a>';
-              $carousel_slides .= '<div class="border-box" id="border-box-' . $variables['nid'] . '">';
-              $carousel_slides .= '<div class="videoContainer">';
-              $carousel_slides .= '<object type="application/x-shockwave-flash" id="swf-' . $variables['nid'] . '" tabindex="0"
-                                      data="http://' . $_SERVER['HTTP_HOST'] . '/sites/all/modules/custom/flash_video/swf/homePlayer.swf"
-                                      width="<?php print $width; ?>" height="<?php print $height; ?>">
-                                      <param name="menu" value="false">
-                                      <param name="scale" value="noScale">
-                                      <param name="allowFullscreen" value="true">
-                                      <param name="allowScriptAccess" value="always">
-                                      <param name="bgcolor" value="#FFFFFF">
-                                      <param name="quality" value="best">
-                                      <param name="wmode" value="transparent">
-                                      <param name="flashvars" value="videoSrc=' . $media_content . '&amp;posterSrc=' . $thumbnail_path . '&amp;stopAndResetCallBack=stopAndResetVideo&amp;accessibleVideoId=accessibleVideoContent-' . $variables['nid'] . '&amp;playVideoCallBack=playVideo&amp;videoStartCall=videoStart[' . $variables['nid'] . ']&amp;videoStopCall=videoStop[' . $variables['nid'] . ']&amp;showBigPlayBtn=true&amp;aSrcAccount=clgbcollegeboardcomprod">
-                                    </object>
-                                    <div id="accessibleVideoContent-' . $variables['nid'] . '" class="onlyScreenReaderVisible">
-                                      <a href="http://media.collegeboard.com/digitalServices/video-player/nosca/Come-to-NOSCA-2012-Destination-Equity-071211-final.mp4">Download Video</a>
-                                    </div>
-                                  </div>
-                                </div></li>';
-            break;
-            case 'thumbnails' :
-            case 'gallery':
-            // VIDEO IN SHADOWBOX
-              // Here is the opening A tag used to play this video inside of a
-              // shadowbox.
-              $opening_thumbnail_a_tag = '<a href="" /' . drupal_get_path('module', 'cb_gallery') .'/include/player.php?embed_host=' . $embed_host . '&height=' . $vid_height . '&width=' . $vid_width . '&src=' . $src . '">';
-            break;
+            }
+            if ($is_iframe_video) {
+              $player_type = 'iframe';
+              $embed_host = (preg_match('/(youtube|vimeo)"/i', $media_content, $e) ? $e[1] : 'unknown');
+              $vid_height = (preg_match('/height="([0-9 ] .*)"/i', $media_content, $h) ? $h[1] : $default_vid_height);
+              $vid_width = (preg_match('/width="([0-9 ] .*)"/i', $media_content, $w) ? $w[1] : $default_vid_width);
+              $vid_src = (preg_match('/src="(.*)"/i', $media_content, $s) ? $s[1] : NULL);
+            }
+            
+            
+            $carousel_slides .= '<li class="item_video" rel="' . $img_index . '">';
+            $carousel_slides .= '<div class="videoContainer">';
+            switch ($player_type) {
+              case 'iframe':
+                $carousel_slides .= $media_content;
+              break;
+              case 'html5':
+               $carousel_slides .= '
+                <video
+                  id="cb_gallery_video_' . $img_index . '"
+                  class="video-js vjs-default-skin"
+                  controls
+                  preload="auto"
+                  width="' . $carousel_settings['width'] . '"
+                  height="' . $carousel_settings['height'] . '" 
+                  poster="' . $thumbnail_path . '"  
+                  data-setup=\'{"example_option":true}\'
+                  >';
+                $carousel_slides .= $video_src;
+                $carousel_slides .= '</video>';
+              break;
+            }
+            
+            $carousel_slides .= ($carousel_2_settings['overlay'] ? '<div class="overlay">' . $media_caption . '</div>' : '');
+            $carousel_slides .= '</div> <!-- end videoContainer -->';
+            $carousel_slides .= '</li>';
+          break;
+          case 'thumbnails' :      
+            
+          // VIDEO IN SHADOWBOX. (Only used when launched from thumbnails.)
+          
+          if ($is_iframe_video) {
+            $player_type = 'iframe';
+            $embed_host = (preg_match('/(youtube|vimeo)"/i', $media_content, $e) ? $e[1] : 'unknown');
+            $vid_height = (preg_match('/height="([0-9 ] .*)"/i', $media_content, $h) ? $h[1] : $default_vid_height);
+            $vid_width = (preg_match('/width="([0-9 ] .*)"/i', $media_content, $w) ? $w[1] : $default_vid_width);
+            $vid_src = (preg_match('/src="(.*)"/i', $media_content, $s) ? $s[1] : NULL);
+            $opening_thumbnail_a_tag = '<a href="/' . drupal_get_path('module', 'cb_gallery') .'/include/player.php?embed_host=' . $embed_host . '&height=' . $vid_height . '&width=' . $vid_width . '&src=' . $src . '">';
           }
+          if ($is_html5_video) {
+            $player_type = 'html5';
+            $exploded_media_content = preg_split('/\R/', $media_content);
+            foreach ($exploded_media_content as $single_line) {
+              if (filter_var($single_line, FILTER_VALIDATE_URL)) {
+                $ext =_get_file_extension($single_line);
+                if (in_array($ext, $acceptable_video_formats)) {
+                  $video_formats[] = $single_line;
+                }
+              }
+            }
+            $opening_thumbnail_a_tag = '<a rel="shadowbox[' . $variables['nid'] . '];height=' . $carousel_settings['height']. ';width=' . $carousel_settings['width'] . '" href="/' . drupal_get_path('module', 'cb_gallery') .'/include/player.php?embed_host=html5&thumbnail=' . $thumbnail_path . '&height=' . $carousel_settings['height'] . '&width=' . $carousel_settings['width'] . '&src=' . (is_array($video_formats) ? join(";", $video_formats) : $single_line) . '" onclick="return false;">';
+          }
+          break;
         }
       }
       // PREPROCESS IMAGE
       if ($media_type == 'image') {
+      // Pull actual image dimentions using this function...?
+      list($img_actual_width, $img_actual_height) = getimagesize($media_content);
         switch ($media_feature_type) {
           case 'carousel_2' :
           case 'gallery':
@@ -1133,8 +1183,9 @@ function cb_gallery_theme($existing, $type, $theme, $path) {
     )
   );
 }
-
-
+/**
+ * Implements hook_node_info().
+ */
 function cb_gallery_node_info() {
   return array(
     'cb_gallery' => array(
@@ -1144,24 +1195,30 @@ function cb_gallery_node_info() {
     )
   );
 }
+/**
+ * Implements hook_node_perm().
+ */
 function cb_gallery_perm() {
   return array('create cb_gallery node', 'edit own cb_gallery');
 }
-
-function press_release_help($path, $arg) {
+/**
+ * Implements hook_help().
+ */
+function cb_gallery_help($path, $arg) {
   switch ($path) {
     case 'admin/help#cb_gallery':
       return '<p>' . t('This module was created by Dean Shelton.') . '</p>';
       break;
   }
 }
+/**
+ * Implements hook_access().
+ */
 function cb_gallery_access($op, $node, $account) {
-
   if ($op == 'create') {
     // Only users with permission to do so may create this node type.
     return user_access('create cb_gallery', $account);
   }
-
   // Users who create a node may edit or delete it later, assuming they have the
   // necessary permissions.
   if ($op == 'update' || $op == 'delete') {

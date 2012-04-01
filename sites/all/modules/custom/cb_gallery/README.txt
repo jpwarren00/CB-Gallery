@@ -1,2 +1,2 @@
-This is the CB_Gallery Module, merged with the CB_Gallery Module.
-
+Josh Hoegen - PLEASE BRANCH! :D
+Create your own branch so we can coordinate our merge's

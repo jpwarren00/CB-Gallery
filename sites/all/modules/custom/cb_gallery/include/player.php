@@ -13,6 +13,10 @@
  * just works. This file checks what kind of embed is being used and displays
  * the most compadiable video player possible.
  */
+function _get_file_extension($filename) {
+  return pathinfo($filename, PATHINFO_EXTENSION);
+}
+$acceptable_video_formats = array('webm', 'mp4', 'ogv');
 $args = array(
                'src'   => FILTER_SANITIZE_URL,
                'height'=> FILTER_SANITIZE_NUMBER_INT,
@@ -20,8 +24,9 @@ $args = array(
                'thumbnail' => FILTER_SANITIZE_URL,
                'embed_host' => FILTER_SANITIZE_SPECIAL_CHARS,
                );
+
 extract(filter_input_array(INPUT_GET, $args), EXTR_OVERWRITE);
-switch($embed_host){
+switch ($embed_host) {
   case "vimeo":
     print '<iframe src="'.$src.'" width="'.$width.'" height="'.$height.'" frameborder="0" webkitAllowFullScreen mozallowfullscreen allowFullScreen></iframe>';
   break;
@@ -30,8 +35,45 @@ switch($embed_host){
     print '<iframe width="'.$width.'" height="'.$height.'" src="'.$src.'" frameborder="0" allowfullscreen></iframe>';
   break;
 
+  case 'html5':
+    $video_src='';
+    $video_source_paths = explode(";", $src);
+    foreach ($video_source_paths as $single_line) {
+      if (filter_var($single_line, FILTER_VALIDATE_URL)) {
+        $ext =_get_file_extension($single_line);
+        
+        if (in_array($ext, $acceptable_video_formats)) {
+          $video_src .= '<source src="' . $single_line . '" type="video/' . $ext . '"/>';
+        }
+      }
+    }
+    print '<html><head>';
+    print '<script type="text/javascript" src="http://vjs.zencdn.net/c/video.js"></script>';
+    print '<link rel="stylesheet" type="text/css" href="http://vjs.zencdn.net/c/video-js.css"/>';
+    print '</head><body>';
+    print '<video
+              id="cb_gallery_video_' . time() . '"
+              class="video-js vjs-default-skin"
+              controls
+              preload="auto"
+              width="' . $width . '"
+              height="' . $height . '" 
+              poster="' . $thumbnail . '"  
+              data-setup=\'{"example_option":true}\'
+              >';
+    print $video_src;
+    print '</video>';
+    print '</body>';
+    print '</html>';
+        
+  break;
+  case 'VHS':
+  case 'betamax':
+  case 'audio_cassette':
+   print "Good luck with that.";
+  break;
   default:
-    // CB.
+    // Flash fallback
     print '<object classid="clsid:D27CDB6E-AE6D-11cf-96B8-444553540000" width="'.$width.'" height="'.$height.'" id="swf-1332474088" align="left">
     <param name="movie" value="/sites/all/libraries/shadowbox/player.swf">
     <param name="play" value="true">
