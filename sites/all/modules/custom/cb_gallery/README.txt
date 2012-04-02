@@ -1,2 +1,4 @@
-Josh Hoegen - PLEASE BRANCH! :D
-Create your own branch so we can coordinate our merge's
+Josh Hoegen -
+Waddup mang.
+Go ahead and make a branch to work on.
+I have left some outstanding tasks in the .module file that you can help on.
