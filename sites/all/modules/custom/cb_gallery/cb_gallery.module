@@ -592,15 +592,20 @@ $form['title'] = array(
     '#size' => 4,
   );
   $form['gallery_info']['carousel_settings']['overlay_y'] = array(
-    '#title' => t('Y position'),
+    '#title' => t('Overlay Vertical position. (y-axis offset)'),
     '#attributes' => array('class' => 'input_carousel_overlay_y'),
     '#default_value' => (isset($gallery_info['gallery_info']['carousel_settings']['overlay_y']) ? $gallery_info['gallery_info']['carousel_settings']['overlay_y'] : 0),
     '#type' => 'textfield',
-    '#description' => t('Y position in percent. Values 0-50 equal position top. Values 51-100 equal position bottom.'),//TODO : Wha?? Explain this better....
+    '#description' => t('Overlay Y-axis offset in px. Default = Distance between TOP OF OVERLAY and TOP OF CAROUSEL.
+                        If you want the offset to be "Distance between BOTTOM OF OVERLAY and FROM BOTTOM OF CAROUSEL" simply add a "!" infront of your number.<br/>Example:
+                        <ul><li>Entering "100" (sans quotes) = Top of overlay should be 100px from top of carousel.</li>
+                        <li>Entering "!100" (sans quotes) = Bottom of overlay should be 100px from bottom of carousel.</li>
+                        <li>Entering "0" (sans quotes) = Top of overlay should be 0px from top of carousel. (Flush against top.)</li>
+                        <li>Entering "!0" (sans quotes) = Bottom of overlay should be 0px from bottom of carousel. (Flush against bottom.)</li></ul>'),
     '#size' => 4,
   );
   $form['gallery_info']['carousel_settings']['interval_time'] = array(
-    '#title' => 'Interval Time',
+    '#title' => 'Pause time (in milliseconds) before moving to the next image.',
     '#default_value' => t(isset($gallery_info['gallery_info']['carousel_settings']['interval_time']) ? $gallery_info['gallery_info']['carousel_settings']['interval_time'] : 4000),
     '#type' => 'textfield',
     '#attributes' => array('class' => 'input_carousel_interval_timesend_to_cb_parents'),
@@ -608,11 +613,11 @@ $form['title'] = array(
     '#size' => 4,
   );
   $form['gallery_info']['carousel_settings']['duration'] = array(
-    '#title' => 'Duration',
+    '#title' => 'Animation time (in miliseconds) to switch from one image to another.',
     '#default_value' => (isset($gallery_info['gallery_info']['carousel_settings']['duration']) ? $gallery_info['gallery_info']['carousel_settings']['duration'] : 1000),
     '#type' => 'textfield',
     '#attributes' => array('class' => 'input_carousel_duration'),
-    '#description' => t('Time (in seconds) to complate the image transition. (Smaller number = faster)'),
+    '#description' => t('Once an animation has begun, a certain amount of time must be declared upon which to amortize the movement.'),
     '#size' => 4,
   );
   $form['gallery_info']['carousel_settings']['flickr_set'] = array(
@@ -921,6 +926,7 @@ function cb_gallery_preprocess_node(&$variables) {
   $acceptable_video_formats = array('webm', 'mp4', 'ogv');
   $pager_list_items =''; // Will be replaced with LI's used for paging buttons.
   $carousel_settings = $cb_gallery['gallery_info']['carousel_settings'];
+  dsm($carousel_settings);
   $additionalCarousel_2vars = array('start' => '1',
                                     'axis' => 'x',
                                     'interval' => 'false',
@@ -928,8 +934,8 @@ function cb_gallery_preprocess_node(&$variables) {
                                     'animation' => 'true',
                                     'callback' => NULL
                                     );
-  $carousel_js_settings = (is_array($carousel_settings) ? array('carousel_2' => array_merge($carousel_settings, $additionalCarousel_2vars)) : $additionalCarousel_2vars);
-  drupal_add_js($carousel_js_settings, 'setting');
+  $carousel_2_settings = (is_array($carousel_settings) ? array('carousel_2' => array_merge($carousel_settings, $additionalCarousel_2vars)) : $additionalCarousel_2vars);
+  drupal_add_js($carousel_2_settings, 'setting');
   // First we check if media exists at all.
   if (isset($cb_gallery['media'])) {
    // Then we loop through the images within the gallery.
@@ -947,19 +953,19 @@ function cb_gallery_preprocess_node(&$variables) {
       $overlay = ''; // Replaced with overlay markup.
       
       // Add the pager if the users want it.
-      if ($carousel_2_settings['pager']) {
+      if ($carousel_2_settings['carousel_2']['pager']) {
         $pager_list_items .= '<li><a rel="' . $img_index . '" class="pagenum" href="#">' . $img_index . '</a></li>';
       }
       // PREPROCESSING VIDEO
       if ($media_type == 'video') {
         
         // Add video.js source.
-        drupal_add_js('http://vjs.zencdn.net/c/video.js');
-        drupal_add_css('http://vjs.zencdn.net/c/video-js.css');
+        drupal_add_js(drupal_get_path('module', 'cb_gallery') .'/include/video.js/video.js');
+        drupal_add_css(drupal_get_path('module', 'cb_gallery') .'/include/video.js/video.css');
         
         $is_html5_video = (preg_match('/\.(mp4|webm|ogv)/', trim($media_content), $v) ? TRUE : FALSE);
         $is_iframe_video = (preg_match('/^<iframe/', trim($media_content)) ? TRUE : FALSE);
-        $is_flash_video = (preg_match('/flv$/', trim($media_content)) ? TRUE : FALSE);
+        //$is_flash_video = (preg_match('/flv$/', trim($media_content)) ? TRUE : FALSE);
         
         // Now that we have as much data as we can grab from the media_content
         // lets display the markup that will give the carousel_2 the elements
@@ -977,7 +983,7 @@ function cb_gallery_preprocess_node(&$variables) {
                 if (filter_var($single_line, FILTER_VALIDATE_URL)) {
                   $ext =_get_file_extension($single_line);
                   if (in_array($ext, $acceptable_video_formats)) {
-                    $video_src .= '<source src="' . $single_line . '" type="video/' . $ext . ' />';
+                    $video_src .= '<source src="' . $single_line . '" type="video/' . $ext . '" />';
                   }
                 }
               }
@@ -1014,7 +1020,7 @@ function cb_gallery_preprocess_node(&$variables) {
               break;
             }
             
-            $carousel_slides .= ($carousel_2_settings['overlay'] ? '<div class="overlay">' . $media_caption . '</div>' : '');
+            $carousel_slides .= ($carousel_2_settings['carousel_2']['overlay'] ? '<div class="overlay">' . $media_caption . '</div>' : '');
             $carousel_slides .= '</div> <!-- end videoContainer -->';
             $carousel_slides .= '</li>';
           break;
@@ -1048,6 +1054,7 @@ function cb_gallery_preprocess_node(&$variables) {
       }
       // PREPROCESS IMAGE
       if ($media_type == 'image') {
+        
       // Pull actual image dimentions using this function...?
       list($img_actual_width, $img_actual_height) = getimagesize($media_content);
         switch ($media_feature_type) {
@@ -1058,12 +1065,12 @@ function cb_gallery_preprocess_node(&$variables) {
               drupal_set_message('Image format is unsupported.', 'error');
             }
             // Is this using Shadowbox?
-            if ($carousel_2_settings['shadowbox'] == 1) {
+            if ($carousel_2_settings['carousel_2']['shadowbox'] == 1) {
               // If so, create the rel trigger for the makrup.
               $shadowbox_trigger = ' rel="shadowbox[carousel_' . $variables['nid'] . '];height=' . $img_actual_height . ';width=' . $img_actual_width . ';"';
             }
             // Is this using an Overlay?
-            if ($carousel_2_settings['overlay'] == 1 && !empty($overlay)) {
+            if ($carousel_2_settings['carousel_2']['overlay'] == 1) {
               // If so, build the overlay for the markup.
               $overlay = '<div class="overlay">' . $media_caption . '</div>';
             }
@@ -1077,7 +1084,7 @@ function cb_gallery_preprocess_node(&$variables) {
           break;
           case 'thumbnails' :
           // IMAGE IN THUMBNAILS
-            $opening_thumbnail_a_tag = '<a href="' . $media['media_content'] . '" rel="shadowbox[' . $variables['nid'] . '];" title="' . $media['media_caption'] . '" onclick="return false;">';
+            $opening_thumbnail_a_tag = '<a href="' . $media_content . '" rel="shadowbox[' . $variables['nid'] . '];" title="' . $media_caption . '" onclick="return false;">';
           break;
           case 'gallery':
             // IMAGE IN CB_GALLERY
@@ -1100,13 +1107,20 @@ function cb_gallery_preprocess_node(&$variables) {
 
   // Pass variables to the node template file.
   $viewport  = '<div id="carousel">';
+  $viewport .= ($carousel_2_settings['carousel_2']['controls'] ? '<a class="buttons prev" href="#"></a>' : '');
   $viewport .= '<div class="viewport">';
   $viewport .= '<ul class="overview">';
-  $viewport .= $pager_list_items;
   $viewport .= $carousel_slides;
-  $viewport .= '</ul></div></div>';
+  $viewport .= '</ul><!-- end carousel -->';
+  
+  $viewport .= '<ul class="pager">';
+  $viewport .= $pager_list_items;
+  $viewport .= '</ul><!-- end pager -->';
+  $viewport .= '</div><!-- end overview -->';
+  $viewport .= ($carousel_2_settings['carousel_2']['controls'] ? '<a class="buttons next" href="#"></a>' : '');
+  $viewport .= '</div><!-- end viewport -->';
 
-  $thumbport = '<div class="thumbport"><ul class="clearfix">';
+  $thumbport = '<div class="thumbport"><ul>';
   $thumbport .= $thumbport_content;
   $thumbport .= '</ul></div>';
 

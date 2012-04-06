@@ -47,30 +47,26 @@ var oSelf;
         var oSwf = $('#carousel object, #carousel video', root);
         var first = true;
         var iPageSize, iSteps, iStepWidth, iCurrent, leftPos, oTimer, bPause, bForward = true,
-            bAxis = options.axis == 'x';
+            bAxis = options.axis == 'x',
+            remainder;
 
         function initialize() {
             iPageSize = bAxis ? $(oPages[0]).outerWidth(true) : $(oPages[0]).outerHeight(true);
             iStepWidth = (iPageSize * options.display);
             
             var iLeftover = Math.ceil(((bAxis ? oViewport.outerWidth() : oViewport.outerHeight()) / (iPageSize * options.display)) - 1);
-
+            
             iSteps = Math.max(1, Math.ceil(oPages.length / options.display) - iLeftover);
             iCurrent = 1;
             oContent.css(bAxis ? 'width' : 'height', (iPageSize * oPages.length)).css('left', '0px');
-            
-        	var remainder = oPages.length % options.display;
-        	//console.log(remainder);
-        	
-        	// If the total amount of img is not divisible  
-        	// by display amount, slide 1 img width 
-    		if(remainder >= 1){
-    			options.singleSlide = 1;
-    		}
-            
+            remainder = oPages.length % options.display;
+            // If the total amount of img is not divisible  
+            // by display amount, slide 1 img width 
+            if (remainder >= 1) {
+                options.singleSlide = 1;
+            }
             setEvents();
             setButtons(iCurrent);
-           
             return oSelf;
         };
 
@@ -91,15 +87,12 @@ var oSelf;
                     return false;
                 });
             }
-
             if (options.interval) {
                 root.hover(oSelf.stop, oSelf.start);
             }
-
             if (options.pager && oPager.length > 0) {
                 $('a', oPager).click(setPager);
             }
-
             if (options.pause) {
                 oSwf.focus(function () {
                     options.interval = false;
@@ -111,12 +104,12 @@ var oSelf;
                     return false;
                 });
             }
-
         };
 
         function setButtons(activeCurrent) {
             if (options.pager) {
                 var oNumbers = $('.pagenum', oPager);
+                
                 oNumbers.removeClass('active');
                 $(oNumbers[activeCurrent - 1]).addClass('active');
             }
@@ -148,65 +141,76 @@ var oSelf;
             setTimer();
         };
         this.move = function (iDirection) {
+        	// TODO: let's do something with all the prepend/append statements
             var oPosition = {};
             var iTarget = parseInt(iCurrent) + parseInt(iDirection);
-
-            // if singleSlide, move by width of a single image
-            // (default is width of carousel)
-            if(options.singleSlide){
-            	iStepWidth = iPageSize;
-            }
+            var moveAmount = Math.abs(iDirection);
+            var iLt = (iSteps * options.display) - options.display;
+            var iGt = (options.display - 1);
+            var leftPos;
+            
+            oBtnPrev.addClass('disabled');
+            oBtnNext.addClass('disabled');
+            oPager.addClass('disabled');
             
             if (iTarget > iSteps) {
                 iTarget = 1;
             } else if (iTarget < 1) {
                 iTarget = iSteps;
             }
-
-            var moveAmount = Math.abs(iDirection);
-            
-            var iLt = (iSteps * options.display) - options.display;
-            var iGt = (options.display - 1);
-            var leftPos = -iStepWidth * (iTarget - 1);
-
             if (iCurrent == iTarget) {
                 return false;
             }
-
-            oBtnPrev.addClass('disabled');
-            oBtnNext.addClass('disabled');
-            oPager.addClass('disabled');
-
-            if (iTarget == 1 && iDirection == 1) {
-                oContent.append($('.overview li:lt(' + iLt + ')')).css({
-                    left: (leftPos) + 'px'
-                });
+            leftPos = -iStepWidth * (iTarget - 1);
+            // if singleSlide, move by width of a single image
+            // else, width of carousel)
+            if (options.singleSlide) {
+                iStepWidth = iPageSize;
+                iSteps = (oPages.length);
                 leftPos = -iStepWidth;
+                if (iDirection == -1) {
+                    oContent.prepend($('.overview li:gt(' + (oPages.length - 2) + ')')).css({
+                        left: (-iStepWidth) + 'px'
+                    });
+                    leftPos = 0;
+                }
+            } else {
+                if (iTarget == iSteps && iDirection == -1) {
+                    oContent.prepend($('.overview li:gt(' + iGt + ')')).css({
+                        left: (leftPos) + 'px'
+                    });
+                    leftPos = (-iStepWidth * (iSteps - 2));
+                }
+                if (iTarget == 1 && iDirection == 1) {
+                    oContent.append($('.overview li:lt(' + iLt + ')')).css({
+                        left: (leftPos) + 'px'
+                    });
+                    leftPos = -iStepWidth;
+                }
             }
-            if (iTarget == iSteps && iDirection == -1) {
-                oContent.prepend($('.overview li:gt(' + iGt + ')')).css({
-                    left: (leftPos) + 'px'
-                });
-                leftPos = (-iStepWidth * (iSteps - 2));
-            }
-
             oPosition[bAxis ? 'left' : 'top'] = leftPos;
             oContent.animate(
             oPosition, {
                 queue: false,
                 duration: options.duration,
                 complete: function () {
-                    if (iTarget == 1 && iDirection == 1) {
-                    	// from using a one based index for moveAmount/iDirection, 
-                    	// we have to keep in mind the normal 0 based index
-                        oContent.append($('.overview li:lt(' + (iGt + 1) + ')')).css({
-                            left: 0 + 'px'
-                        });
-                    }
-                    if (iTarget == iSteps && iDirection == -1) {
-                        oContent.prepend($('.overview li:gt(' + (iLt - 1) + ')')).css({
-                            left: (-iStepWidth * (iTarget - 1)) + 'px'
-                        });
+                    if (options.singleSlide) {
+                        if (iDirection == 1) {
+                            oContent.append($('.overview li:lt(' + (1) + ')')).css({
+                                left: 0 + 'px'
+                            });
+                        }
+                    } else {
+                        if (iTarget == 1 && iDirection == 1) {
+                            oContent.append($('.overview li:lt(' + (iGt + 1) + ')')).css({
+                                left: 0 + 'px'
+                            });
+                        }
+                        if (iTarget == iSteps && iDirection == -1) {
+                            oContent.prepend($('.overview li:gt(' + (iLt - 1) + ')')).css({
+                                left: (-iStepWidth * (iTarget - 1)) + 'px'
+                            });
+                        }
                     }
                     iCurrent = iTarget;
                     oBtnPrev.removeClass('disabled');
@@ -214,13 +218,9 @@ var oSelf;
                     oPager.removeClass('disabled');
                     setButtons(iTarget);
                     setTimer();
-                   
                 }
             });
-           
-
         };
-
         return initialize();
     };
 })(jQuery);

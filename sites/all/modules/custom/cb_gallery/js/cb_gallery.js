@@ -26,59 +26,63 @@ $(function () { // On Document Ready
    */
 
   function refreshLivePreview(media_feature_type, thumbnail_aspect_ratio) {
-
     // Set default viewport values incase arguments are missing. (which happens onload).
     if (media_feature_type == undefined && thumbnail_aspect_ratio == undefined) {
-      media_feature_type = $('input[name="media_feature_type"]:checked').val(), thumbnail_aspect_ratio = $('input[name="thumbnail_aspect_ratio"]:checked').val();
+      media_feature_type = $('input[name="media_feature_type"]:checked').val(), thumbnail_aspect_ratio = $('input[name="thumbnail_settings[thumbnail_aspect_ratio]"]:checked').val();
     }
 
+     var  $livepreview =$('#live_preview'),
+          $carousel_settings_fieldset = $('.carousel_2_settings_fieldset'),
+          $all_thumbnails_in_gui = $('div.dragable p.img_wrapper');
+          
     $('#edit-thumbnail-settings-thumbnail-height-wrapper').hide();
     switch (thumbnail_aspect_ratio) {
     case "4:3":
-      $('#live_preview').addClass('fourByThree').removeClass('sixteenByNine').removeClass('oneToOne');
+      $livepreview.addClass('fourByThree').removeClass('sixteenByNine').removeClass('oneToOne');
+      $all_thumbnails_in_gui.css('width','80px');
       break;
     case "custom_height":
-
       $('#edit-thumbnail-settings-thumbnail-height-wrapper').show();
       break;
     case "auto":
     case "16:9":
-      $('#live_preview').addClass('sixteenByNine').removeClass('fourByThree').removeClass('oneToOne');
+      $livepreview.addClass('sixteenByNine').removeClass('fourByThree').removeClass('oneToOne');
+      $all_thumbnails_in_gui.css('width','107px');
       break;
     case "1:1":
-      $('#live_preview').addClass('oneToOne').removeClass('sixteenByNine').removeClass('fourByThree');
+      $livepreview.addClass('oneToOne').removeClass('sixteenByNine').removeClass('fourByThree');
+      $all_thumbnails_in_gui.css('width','60px');
       break;
     }
     switch (media_feature_type) {
     case "thumbnails":
-      $('#live_preview').addClass('noViewport').removeClass('viewport') //hide viewport
+      $livepreview.addClass('noViewport').removeClass('viewport') //hide viewport
       .addClass('showThumbport') //show thumbport
       .removeClass('noThumbport');
-      $('.carousel_2_settings_fieldset').slideUp(function () {
+      $carousel_settings_fieldset.slideUp(function () {
         $('.thumbnail_settings_fieldset').slideDown();
       });
       break;
     case "gallery":
-      $('#live_preview').addClass('viewport') //show viewport
+      $livepreview.addClass('viewport') //show viewport
       .removeClass('noViewport').addClass('showThumbport') //show thumbport
       .removeClass('noThumbport');
       $('.thumbnail_settings_fieldset').slideDown();
-      $('.carousel_2_settings_fieldset').slideDown();
+      $carousel_settings_fieldset.slideDown();
       break;
     case "carousel_2":
-      $('#live_preview').addClass('viewport') //show viewport
+      $livepreview.addClass('viewport') //show viewport
       .removeClass('noViewport').removeClass('showThumbport').addClass('noThumbport'); //hide thumbport
       $('.thumbnail_settings_fieldset').slideUp(function () {
-        $('.carousel_2_settings_fieldset').slideDown();
+        $carousel_settings_fieldset.slideDown();
       });
 
       $('.thumbnail_settings_fieldset').slideUp(function () {
-        $('.carousel_2_settings_fieldset').slideDown();
+        $carousel_settings_fieldset.slideDown();
       });
       break;
     }
   }
-  refreshLivePreview(); // set default live-preview.
   // Helper functions
   function resetEditFormFields() {
     $('.being_cloned').removeClass('being_cloned');
@@ -88,7 +92,6 @@ $(function () { // On Document Ready
     // Clear all elements within this form.
     $('#node-form .input_image_name, #node-form .input_image_caption, #node-form .input_thumbnail_path, #edit-edit-media-id').val('');
     $('input[name="media_type"]').attr('checked', false);
-
     // Button Control
     $('.submit_edit_media_button').hide(); // Show the SUBMIT EDITS button.
     $('.cancel_edit_media_button').hide(); // Show the Cancel EDITS button.
@@ -100,6 +103,7 @@ $(function () { // On Document Ready
       scrollTop: $(id).offset().top
     }, 'slow');
   }
+  
   // Helper Functions
   function populateForm(data) {
     $('.input_image_name').val(data.media_name); // set the name
@@ -181,6 +185,7 @@ $(function () { // On Document Ready
           }); // remove empty placeholder if it exists
           resetEditFormFields(); // Clear out the form
           resetEventBindings(); // Reset the jquery event bindings to include the newly added DOM element.
+          refreshLivePreview(); // Make sure that thumbnails are set correctly.
         }
       }
     });
@@ -294,7 +299,6 @@ $(function () { // On Document Ready
           message: 'Nothing was deleted. Whew! That was close, huh?',
           message_class: 'status'
         });
-
       }
     });
   }
@@ -311,4 +315,6 @@ $(function () { // On Document Ready
       $('.image_fieldset').slideDown();
     });
   });
+  
+  refreshLivePreview(); // set default live-preview.
 });

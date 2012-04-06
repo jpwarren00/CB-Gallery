@@ -1,5 +1,5 @@
 $(document).ready(function(){
-	console.log(Drupal.settings.carousel_2);
+	//console.log(Drupal.settings.carousel_2);
 	/*//Drupal.settings.carousel_2 created in:
 	 * ../carousel.module: <?php $carousel_js_settings = array('carousel_2' => array(
 		 'start' => '1',
@@ -60,29 +60,34 @@ $(document).ready(function(){
 		
 	}
 	
-	if(overlay_y <= 50){
+	// If the overlay is a string, that means it has a "!" infront of it
+	// per the instructions... Of they perhaps did not follow the
+	// instructions, and instead, put "100px" or some other such foolishness
+	// this will also ring true, and give the user an unexpected result...
+	if(typeof(overlay_y)=='string') {
+		overlay.css({
+			height: (overlay_height)+'px',
+			bottom: (overlay_y.slice(1))+'px'
+		});
+	}else{
 		overlay.css({
 			height: (overlay_height)+'px',
 			top: (overlay_y)+'px'
 		});
-	} else {
-		overlay.css({
-			height: (overlay_height)+'px',
-			bottom: (100-overlay_y)+'px'
-		});
 	}
 	
-	// Dev controlled in sites main script page
-	/*if(controls){
-		carousel.mouseenter(function(){
-			//buttons.show();
+	
+	if(controls){
+		buttons.show()
+		/*$('#carousel').hover(function(){
+			buttons.show();
 		}).mouseleave(function(){
-			//buttons.hide();
+			buttons.hide();
 		}).css({
 			height: (carousel_height+30)+'px',
 			width: (carousel_width)+'px'
-		});
-	}*/
+		});*/
+	}
 	if(!controls){
 		buttons.hide();
 	}

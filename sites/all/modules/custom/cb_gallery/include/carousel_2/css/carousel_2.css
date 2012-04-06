@@ -1,7 +1,6 @@
 
 #carousel {
     height: 330px;
-    width: 624px;
     border:1px solid #ccc;
 }
 
@@ -40,12 +39,14 @@
 #carousel .overview li {
     float: left;
     padding: 0;
+    margin:0;
     text-align: left;
     background-image: none;
 }
 
 #carousel .viewport img {
     margin: 0;
+    padding: 0;
 }
 
 #carousel .pager {
@@ -85,12 +86,12 @@
     height: 25px;
     cursor: pointer;
     background: url(../img/prev-horizontal.png) no-repeat 0 0;
-    margin-left: 5px;
+    margin-left: 0;
     border: none;
     position: absolute;
     top: 20%;
     left: 10px;
-    margin: 30px 0 0 10px;
+    margin: 30px 0 0 0;
     z-index: 6;
 }
 
@@ -101,12 +102,12 @@
     height: 25px;
     cursor: pointer;
     background: url(../img/next-horizontal.png) no-repeat 0 0;
-    margin-right: 4px;
+    margin-right: 0;
     border: none;
     position: absolute;
     top: 20%;
-    right: 10px;
-    margin: 30px 10px 0 0;
+    right: 0;
+    margin: 30px 0 0 0;
     z-index: 6;
 }
 
