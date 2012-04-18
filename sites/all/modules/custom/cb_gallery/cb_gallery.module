@@ -165,9 +165,8 @@ function _get_cb_gallery_info($nid, $single_new_item = NULL) {
           cb_gallery_children.media_type,
           cb_gallery_children.media_id,
           cb_gallery_children.media_sort_order,
-          cb_gallery_parents.thumbnail_serialized_settings,
-          cb_gallery_parents.display_title,
-          cb_gallery_parents.carousel_2_serialized_settings
+          cb_gallery_parents.settings,
+          cb_gallery_parents.display_title
           FROM {cb_gallery_parents}
           LEFT JOIN {cb_gallery_children}
           ON cb_gallery_children.nid = cb_gallery_parents.nid
@@ -187,36 +186,34 @@ function _get_cb_gallery_info($nid, $single_new_item = NULL) {
 
   $i = 0; // Set the iterator as the media index.
   while ($row = db_fetch_object($result)) {
-
+    
     if ($i === 0) { // Pull gallery data ONCE & don't make a seperate SQL call.
 
       // Unserialize the data for the plugins.
-      $carousel_settings = unserialize($row->carousel_2_serialized_settings);
-      $thumbnail_settings = unserialize($row->thumbnail_serialized_settings);
-
+      $settings = unserialize($row->settings);
       // We must calculate ourselves, the relative height of thumbnails
       // based on their aspect ratio and constrained widths. Best to do it here.
       switch ($thumbnail_settings['thumbnail_aspect_ratio']) {
         case "4:3":
-          $calculated_height = ceil($thumbnail_settings['thumbnail_width'] / (4/3));
+          $calculated_height = ceil($settings['thumbnail_settings']['thumbnail_width'] / (4/3));
         break;
         case "16:9":
-          $calculated_height = ceil($thumbnail_settings['thumbnail_width'] / (16/9));
+          $calculated_height = ceil($settings['thumbnail_settings']['thumbnail_width'] / (16/9));
         break;
         case "1:1":
-          $calculated_height = $thumbnail_settings['thumbnail_width'];
+          $calculated_height = $settings['thumbnail_settings']['thumbnail_width'];
         break;
         case "auto":
           $calculated_height = NULL;
         break;
         case 'custom_height':
-          $calculated_height = (!empty($thumbnail_settings['thumbnail_height']) ? $thumbnail_settings['thumbnail_height'] : 100);
+          $calculated_height = (!empty($settings['thumbnail_settings']['thumbnail_height']) ? $settings['thumbnail_settings']['thumbnail_height'] : 100);
         break;
       }
       $return['gallery_info']['thumbnail_height'] = $calculated_height;
-      $return['gallery_info']['thumbnail_width'] = $thumbnail_settings['thumbnail_width'];
+      $return['gallery_info']['thumbnail_width'] = $settings['thumbnail_settings']['thumbnail_width'];
       $return['gallery_info']['thumbnail_settings'] = $thumbnail_settings;
-      $return['gallery_info']['carousel_settings'] = $carousel_settings;
+      $return['gallery_info']['carousel_settings'] = $settings['carousel_settings'];
       $return['gallery_info']['media_feature_type'] = $row->media_feature_type;
       $return['gallery_info']['unique_css_block_class'] = $row->unique_css_block_class;
       $return['gallery_info']['display_title'] = html_entity_decode($row->display_title);
@@ -261,7 +258,7 @@ function _render_gallery_gui_elements($nid, $gallery_info = NULL, $single_new_it
   if ($gallery_info === FALSE) {
     // This gallery does not exist! This should not happen often/ever.
     // TODO: fail better.
-    drupal_set_message('The gallery you requested does not exist. This usually happens when you are attenpting to edit a recently deleted gallery.', 'error');
+    drupal_set_message('The gallery you requested does not exist. This usually happens when you are attempting to edit a recently deleted gallery.', 'error');
   }
   if (!isset($gallery_info['media'])) {
     // This gallery is empty.
@@ -461,7 +458,7 @@ $form['title'] = array(
   $form['gallery_info']['media_feature_type'] = array(
     '#title' => t('Media Highlight Style'),
     '#type' => 'radios',
-    '#options' => array('thumbnails' => 'Thumbnails. (With Shadowbox)', 'carousel_2' => 'CB Carousel 2. (Optional Shadowbox)', 'gallery' => 'CB Gallery. (Carousel 2 with Thumbnails, and an Optional Shadowbox)', ),
+    '#options' => array('thumbnails' => 'Thumbnails. (With Shadowbox)', 'gallery' => 'CB Gallery. (Carousel 2 with Thumbnails, and an Optional Shadowbox)', ),
     '#description' => t('When thumbnails are clicked, you can choose to open a shadowbox, or display the media in a viewport.'),
     '#attributes' => array('class' => 'input_media_feature_type'),
     '#default_value' => (isset($gallery_info['gallery_info']['media_feature_type']) ? $gallery_info['gallery_info']['media_feature_type'] : 'gallery'),
@@ -778,51 +775,24 @@ $form['title'] = array(
 function cb_gallery_theme_registry_alter(&$registry) {
   array_unshift($registry['node']['theme paths'], drupal_get_path('module', 'cb_gallery') . '/theme');
 }
-function _serialize_thumbnail_and_carousel_settings($node, &$carousel, &$thumbs) {
-  // Seperate the structured data-set array of carousel/thumbnail variables
-  $carousel = array();
-  $thumbs = array();
-
-  foreach ($node->carousel_settings as $key => $val) {
-    $serialize_me_carousel[$key] = $val;
-  }
-  foreach ($node->thumbnail_settings as $key => $val) {
-    $serialize_me_thumbnail[$key] = $val;
-  }
-
-  $carousel = serialize($serialize_me_carousel);
-  $thumbs = serialize($serialize_me_thumbnail);
-}
 /**
  * Implements hook_nodeapi()
  */
 function cb_gallery_nodeapi(&$node, $op, $a3 = NULL, $a4 = NULL) {
   if ($node->type == 'cb_gallery') {
+    
     switch ($op) {
       case 'update':
-
-        $carousel_2_serialized_settings = array();
-        $thumbnail_serialized_settings = array();
-        _serialize_thumbnail_and_carousel_settings($node, $carousel_2_serialized_settings, $thumbnail_serialized_settings);
-
-        $sql  = "UPDATE {cb_gallery_parents} SET  media_feature_type='%s', unique_css_block_class='%s', display_title='%s', carousel_2_serialized_settings='%s', thumbnail_serialized_settings='%s' WHERE nid='%d';";
-        $args = array($node->media_feature_type, $node->unique_css_block_class, $node->display_title, $carousel_2_serialized_settings, $thumbnail_serialized_settings, $node->nid);
-        db_query($sql, $args);
-      break;
-      case 'insert':
-
-        $carousel_2_serialized_settings = array();
-        $thumbnail_serialized_settings = array();
-        _serialize_thumbnail_and_carousel_settings($node, $carousel_2_serialized_settings, $thumbnail_serialized_settings);
-
         // Only the parent gallery is being created. The child elements will be coming as an 'update.'
         // Always DELETE, THEN INSERT from the parent gallery. UPDATE is unnessisairy.
         $sql  = "DELETE FROM {cb_gallery_parents} WHERE nid='%d';";
         $args = array($node->nid);
         db_query($sql, $args);
+      case 'insert':
 
-        $sql  = "INSERT INTO {cb_gallery_parents} (nid,  media_feature_type, display_title, unique_css_block_class, carousel_2_serialized_settings, thumbnail_serialized_settings) VALUES ('%d','%s', '%s','%s', '%s', '%s');";
-        $args = array($node->nid, $node->media_feature_type, $node->display_title, $node->unique_css_block_class, $carousel_2_serialized_settings, $thumbnail_serialized_settings);
+        $settings = serialize(array('carousel_settings' => $node->carousel_settings, 'thumbnail_settings' => $node->thumbnail_settings));
+        $sql  = "INSERT INTO {cb_gallery_parents} (nid,  media_feature_type, display_title, unique_css_block_class, settings) VALUES ('%d','%s', '%s','%s', '%s');";
+        $args = array($node->nid, $node->media_feature_type, $node->display_title, $node->unique_css_block_class, $settings);
         db_query($sql, $args);
       break;
       case "view":
@@ -919,7 +889,7 @@ function cb_gallery_preprocess_node(&$variables) {
   $acceptable_video_formats = array('webm', 'mp4', 'ogv');
   $pager_list_items =''; // Will be replaced with LI's used for paging buttons.
   $carousel_settings = $cb_gallery['gallery_info']['carousel_settings'];
-  dsm($carousel_settings);
+  
   $additionalCarousel_2vars = array('start' => '1',
                                     'axis' => 'x',
                                     'interval' => 'false',

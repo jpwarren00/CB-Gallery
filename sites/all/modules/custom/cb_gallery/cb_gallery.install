@@ -31,13 +31,8 @@ function cb_gallery_schema() {
         'description' => 'CSS Class to put into the outermost div.',
         'type' => 'text',
       ),
-      'thumbnail_serialized_settings' => array(
-        'description' => 'Serialized PHP used to configure the Thumbnails.',
-        'type' => 'text',
-        'not null' => FALSE,
-      ),
-      'carousel_2_serialized_settings' => array(
-        'description' => 'Serialized PHP used to configure the Carousel.',
+      'settings' => array(
+        'description' => 'Serialized PHP used to configure the Carousel and thumbnails.',
         'type' => 'text',
       ),
     ),
