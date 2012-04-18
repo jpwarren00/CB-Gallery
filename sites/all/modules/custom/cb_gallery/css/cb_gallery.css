@@ -217,21 +217,29 @@ h3.gallery_title{
 /*LIVE STYLES*/
 /*These are meant to be overridden*/
 div.cb_gallery_node .viewport{
-	border:1px solid #ccc;
+
 }
+
 div.thumbport ul {
 	padding: 0;
-	border:1px solid #ccc;
+	margin: 1px 0 0 0;
 }
 div.thumbport ul li{
   padding:0;
   margin:0;
   float:left;
   background:none;
-}
-div.thumbport ul li p{
-  padding:0;
-  margin:0;
   overflow:hidden;
-  border:1px solid #ccc;
+}
+
+div.thumbport ul li img{
+  display: block;
+  float: left;
+}
+
+div.thumbport ul li span{
+  position: absolute;
+  color: white;
+  font: bold italic 54px/67px Verdana, Arial;
+
 }

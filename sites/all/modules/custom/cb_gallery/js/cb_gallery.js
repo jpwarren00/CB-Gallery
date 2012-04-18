@@ -3,6 +3,7 @@
  * What this file does:
  * 1-Impliments the jQuery UI Sortable method.
  * 2-Manage Custom Show/Hides
+ * TODO: turn these: $() into these: var element
  */
 $(function () { // On Document Ready
   $('#ajax_loading').ajaxStart(function () {
@@ -134,6 +135,28 @@ $(function () { // On Document Ready
       .html(data.message) // Write the Status
       .slideDown() // Show the Status
     });
+  }
+  
+  function front_end_validation(){
+    var input_display = $('#edit-carousel-settings-display');
+    var input_pager = $('#edit-carousel-settings-pager');
+	var input_move_amount = $('#edit-carousel-settings-move-amount');
+    var images = $('#my_cb_gallery .dragable');
+	// disable single slide if display count = 1. See jquery.tinycarousel.js
+	if(input_display.val() == '1'){
+		input_move_amount.val('0').attr('disabled', 'disabled').attr('checked', '');
+	} else {
+		input_move_amount.attr('disabled', false);
+	}
+	// if total amount of images not divisible by display
+	if(images.length % input_display.val() != 0){
+		// console.log(images.length % display.val());
+		input_move_amount.val('1').attr('disabled', 'disabled').attr('checked', 'checked');
+		input_pager.val('0').attr('disabled', 'disabled').attr('checked', '');
+	} else {
+		input_move_amount.val('0').attr('disabled', false).attr('checked', '');
+		input_pager.attr('disabled', false);
+	}
   }
 
 
@@ -316,5 +339,10 @@ $(function () { // On Document Ready
     });
   });
   
+  
+  $('input').blur(function(){
+	front_end_validation();
+  });
+  front_end_validation();
   refreshLivePreview(); // set default live-preview.
 });

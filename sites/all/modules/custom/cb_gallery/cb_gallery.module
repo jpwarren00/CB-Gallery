@@ -5,19 +5,8 @@
  * Josh Hoegen - PLEASE BRANCH YOUR OWN VERSION! :D
  * 
  * TODO:
- * 1. Attempt to move the nessisity for "width" form field in the carousel
- *    settings. The only 'user-hardcoded' widths should be the slides, and the
- *    thumbnails. All wrapper div's need to be "auto." The goal here is to allow
- *    the OUTER MOST DIV set the width, and have all child elements (except for
- *    the IMAGES) react.
- * 2. The carousel.js script that I have must be old. Please take a look at it
- *    and update it where nessisairy. The image scrolling functionality is dated
- *    and not functioning correctly.
- * 3. Work to remove the nessisity for css.php files.  It limits the user to
- *    only one carousel per page. Simply set easily overrideable defaults in
- *    carousel_2.css. No hardcoded widths of wrapper div's, tho.
- * 4. Add new video player to carousel/thumbnails. 
- * 5. ... Fix any of my own fuckups that you find. :D
+ * 1. Add new video player to carousel/thumbnails. 
+ * 2. ... Fix any of my own fuckups that you find. :D
  * 
  *
  *
@@ -31,34 +20,50 @@
  *    and video embeds.
  */
 
- /**
-  * Implements hook_menu().
-  */
+/**
+ * Implements hook_menu().
+ */
 function cb_gallery_menu() {
-  $items['admin/cb_gallery_ajax/media_processing/%'] = array(
+  $items['admin/cb_gallery_ajax/media_processing/%']  = array(
     'page callback' => '_media_processing',
     'type' => MENU_CALLBACK,
-    'page arguments' => array(3), // Pass serial data as an argument.
-    'access arguments' => array('access content js'),
-    );
+    'page arguments' => array(
+      3
+    ), // Pass serial data as an argument.
+    'access arguments' => array(
+      'access content js'
+    )
+  );
   $items['admin/cb_gallery_ajax/change_sort_order/%'] = array(
     'page callback' => 'cb_gallery_ajax_change_sort_order',
     'type' => MENU_CALLBACK,
-    'page arguments' => array(3), // Pass serial data as an argument.
-    'access arguments' => array('access content js'),
-    );
-  $items['admin/cb_gallery_ajax/%/delete_media'] = array(
+    'page arguments' => array(
+      3
+    ), // Pass serial data as an argument.
+    'access arguments' => array(
+      'access content js'
+    )
+  );
+  $items['admin/cb_gallery_ajax/%/delete_media']      = array(
     'page callback' => 'cb_gallery_ajax_delete_media',
     'type' => MENU_CALLBACK,
-    'page arguments' => array(2), // Pass serial data as an argument.
-    'access arguments' => array('access content js'),
-    );
-  $items['admin/cb_gallery_ajax/%/edit_media'] = array(
+    'page arguments' => array(
+      2
+    ), // Pass serial data as an argument.
+    'access arguments' => array(
+      'access content js'
+    )
+  );
+  $items['admin/cb_gallery_ajax/%/edit_media']        = array(
     'page callback' => 'cb_gallery_ajax_edit_media',
     'type' => MENU_CALLBACK,
-    'page arguments' => array(2), // Pass serial data as an argument.
-    'access arguments' => array('access content js'),
-    );
+    'page arguments' => array(
+      2
+    ), // Pass serial data as an argument.
+    'access arguments' => array(
+      'access content js'
+    )
+  );
   return $items;
 }
 
@@ -72,18 +77,20 @@ function cb_gallery_menu() {
  * existing media.
  */
 function cb_gallery_ajax_edit_media($media_id) {
-  $sql = "SELECT media_name, media_content, media_caption, thumbnail_path, media_type, media_sort_order
+  $sql    = "SELECT media_name, media_content, media_caption, thumbnail_path, media_type, media_sort_order
           FROM {cb_gallery_children}
           WHERE media_id = '%d';";
-  $args = array($media_id);
+  $args   = array(
+    $media_id
+  );
   $result = db_query($sql, $args);
-  $row = db_fetch_object($result);
-
+  $row    = db_fetch_object($result);
+  
   // For safety, $row->media_content is HTML encoded when saved in the database.
   // Because of this, we must DEcode it to return the html content back to the
   // json object. 
   $row->media_content = html_entity_decode($row->media_content, ENT_QUOTES);
-  $row->media_name = html_entity_decode($row->media_name, ENT_QUOTES);
+  $row->media_name    = html_entity_decode($row->media_name, ENT_QUOTES);
   $row->media_caption = html_entity_decode($row->media_caption, ENT_QUOTES);
   // There we go. All ready for the return.
   return drupal_json($row);
@@ -101,34 +108,43 @@ function cb_gallery_ajax_edit_media($media_id) {
  *     structure of the string.
  */
 function cb_gallery_ajax_change_sort_order($args) {
-
   // The Gallery ID is the first element in the string and must be seperated to
   // create a loopable array of gallery images for SQL to reorder these children
   // properly.
   // I hate usoing explode... Open to suggestions on smarter way to do this.
   $args = explode("-", $args);
-  $nid  = $args[0];// save the $nid so we can remove it from this array.
+  $nid  = $args[0]; // save the $nid so we can remove it from this array.
   $sqls = array(); // prep the SQL array (we will call multiple update querys)
-  $i=0;            // prep the iterator.
-  array_shift($args);// Remove the NID from the array of child elements.
-
+  $i    = 0; // prep the iterator.
+  array_shift($args); // Remove the NID from the array of child elements.
+  
   // Now that each of the passed arguments is truly a media_id,
   // we can loop through and craete the SQL needed to reorder them.
   // All of the arguments are in order, so the iterator will represent
   // the new sort_order as we loop.
   foreach ($args as $media_id) {
-    $sql = "UPDATE {cb_gallery_children} SET media_sort_order = '%d' WHERE media_id = '%d';";
-    $sql_args = array($i, $media_id, $nid);
+    $sql      = "UPDATE {cb_gallery_children} SET media_sort_order = '%d' WHERE media_id = '%d';";
+    $sql_args = array(
+      $i,
+      $media_id,
+      $nid
+    );
     // call each query, hunting for errors. If there is an error, we stop.
     if (!db_query($sql, $sql_args)) {
       // This will only happen if the GUI is trying to update a media_id that
       // does not exist.
-      return drupal_json(array('message_class' => 'error', 'message' => 'Oh no! There was a problem adjusting the sort order of this gallery.'));
+      return drupal_json(array(
+        'message_class' => 'error',
+        'message' => 'Oh no! There was a problem adjusting the sort order of this gallery.'
+      ));
       // TODO: Handle the failure in a better way.
     }
     $i++;
   }
-  return drupal_json(array('message_class' => 'status', 'message' => 'The new order of these items has been saved.'));
+  return drupal_json(array(
+    'message_class' => 'status',
+    'message' => 'The new order of these items has been saved.'
+  ));
 }
 /**
  * @cb_gallery_ajax_delete_media()
@@ -138,12 +154,20 @@ function cb_gallery_ajax_change_sort_order($args) {
  * Description: Used to delete a child element from the gallery.
  */
 function cb_gallery_ajax_delete_media($media_id) {
-  $sql = "DELETE FROM {cb_gallery_children} WHERE media_id = '%d';";
-  $sql_args = array($media_id);
+  $sql      = "DELETE FROM {cb_gallery_children} WHERE media_id = '%d';";
+  $sql_args = array(
+    $media_id
+  );
   if (!db_query($sql, $sql_args)) {
-      return drupal_json(array('message_class' => 'error', 'message' => 'Oh no! There was a problem removing this media.'));
-    }
-  return drupal_json(array('message_class' => 'status', 'message' => 'Media has been successfully removed.'));
+    return drupal_json(array(
+      'message_class' => 'error',
+      'message' => 'Oh no! There was a problem removing this media.'
+    ));
+  }
+  return drupal_json(array(
+    'message_class' => 'status',
+    'message' => 'Media has been successfully removed.'
+  ));
 }
 
 /**
@@ -164,9 +188,11 @@ function _get_file_extension($filename) {
  *     Return FALSE if 0 elements are returned. Otherwise returns a structured gallery_info array.
  */
 function _get_cb_gallery_info($nid, $single_new_item = NULL) {
-  $args = array($nid); // Set the nid as the default argument. We may add an additional one later.
+  $args = array(
+    $nid
+  ); // Set the nid as the default argument. We may add an additional one later.
   // Build SQL to pull the galery data.
-  $sql = "SELECT
+  $sql  = "SELECT
           cb_gallery_parents.media_feature_type,
           cb_gallery_parents.unique_css_block_class,
           cb_gallery_children.media_name,
@@ -183,70 +209,69 @@ function _get_cb_gallery_info($nid, $single_new_item = NULL) {
           LEFT JOIN {cb_gallery_children}
           ON cb_gallery_children.nid = cb_gallery_parents.nid
           WHERE cb_gallery_parents.nid = '%d'";
-
+  
   // When this is being called via AJAX, we will want to only return
   // one element.
   if (isset($single_new_item) && is_numeric($single_new_item)) {
     $sql .= " AND cb_gallery_children.media_id ='%d'";
-
+    
     // Add the arg required to limit this query to a single result.
     array_push($args, $single_new_item);
   }
   // Finish up the SQL and call the query.
   $sql .= " ORDER BY cb_gallery_children.media_sort_order;";
   $result = db_query($sql, $args);
-
+  
   $i = 0; // Set the iterator as the media index.
   while ($row = db_fetch_object($result)) {
-
     if ($i === 0) { // Pull gallery data ONCE & don't make a seperate SQL call.
-
+      
       // Unserialize the data for the plugins.
-      $carousel_settings = unserialize($row->carousel_2_serialized_settings);
+      $carousel_settings  = unserialize($row->carousel_2_serialized_settings);
       $thumbnail_settings = unserialize($row->thumbnail_serialized_settings);
-
+      
       // We must calculate ourselves, the relative height of thumbnails
       // based on their aspect ratio and constrained widths. Best to do it here.
       switch ($thumbnail_settings['thumbnail_aspect_ratio']) {
         case "4:3":
-          $calculated_height = ceil($thumbnail_settings['thumbnail_width'] / (4/3));
-        break;
+          $calculated_height = ceil($thumbnail_settings['thumbnail_width'] / (4 / 3));
+          break;
         case "16:9":
-          $calculated_height = ceil($thumbnail_settings['thumbnail_width'] / (16/9));
-        break;
+          $calculated_height = ceil($thumbnail_settings['thumbnail_width'] / (16 / 9));
+          break;
         case "1:1":
           $calculated_height = $thumbnail_settings['thumbnail_width'];
-        break;
+          break;
         case "auto":
           $calculated_height = NULL;
-        break;
+          break;
         case 'custom_height':
           $calculated_height = (!empty($thumbnail_settings['thumbnail_height']) ? $thumbnail_settings['thumbnail_height'] : 100);
-        break;
+          break;
       }
-      $return['gallery_info']['thumbnail_height'] = $calculated_height;
-      $return['gallery_info']['thumbnail_width'] = $thumbnail_settings['thumbnail_width'];
-      $return['gallery_info']['thumbnail_settings'] = $thumbnail_settings;
-      $return['gallery_info']['carousel_settings'] = $carousel_settings;
-      $return['gallery_info']['media_feature_type'] = $row->media_feature_type;
+      $return['gallery_info']['thumbnail_height']       = $calculated_height;
+      $return['gallery_info']['thumbnail_width']        = $thumbnail_settings['thumbnail_width'];
+      $return['gallery_info']['thumbnail_settings']     = $thumbnail_settings;
+      $return['gallery_info']['carousel_settings']      = $carousel_settings;
+      $return['gallery_info']['media_feature_type']     = $row->media_feature_type;
       $return['gallery_info']['unique_css_block_class'] = $row->unique_css_block_class;
-      $return['gallery_info']['display_title'] = html_entity_decode($row->display_title);
+      $return['gallery_info']['display_title']          = html_entity_decode($row->display_title);
     }
-
+    
     // Media data grows during iteration.
     if (!empty($row->media_id)) {
-      $return['media'][$i]['media_id'] = $row->media_id;
-      $return['media'][$i]['media_name'] = html_entity_decode($row->media_name);
-      $return['media'][$i]['media_content'] = html_entity_decode($row->media_content);
-      $return['media'][$i]['media_caption'] = html_entity_decode($row->media_caption);
-      $return['media'][$i]['thumbnail_path'] = $row->thumbnail_path;
+      $return['media'][$i]['media_id']         = $row->media_id;
+      $return['media'][$i]['media_name']       = html_entity_decode($row->media_name);
+      $return['media'][$i]['media_content']    = html_entity_decode($row->media_content);
+      $return['media'][$i]['media_caption']    = html_entity_decode($row->media_caption);
+      $return['media'][$i]['thumbnail_path']   = $row->thumbnail_path;
       $return['media'][$i]['media_sort_order'] = $row->media_sort_order;
-      $return['media'][$i]['media_type'] = $row->media_type;
+      $return['media'][$i]['media_type']       = $row->media_type;
       $i++;
     }
   }
   // Return FALSE by default, otherwise a structured gallery_info array.
-  return (isset($return) ? $return : FALSE );
+  return (isset($return) ? $return : FALSE);
 }
 /**
  * @cb_help_function
@@ -260,7 +285,6 @@ function _get_cb_gallery_info($nid, $single_new_item = NULL) {
  *                               produced, give it's media_id
  */
 function _render_gallery_gui_elements($nid, $gallery_info = NULL, $single_new_item = NULL) {
-
   // This function may be called by the edit page being loaded
   // or by a new add/edit event being called from the form.
   // To check on which type of request this is, we just need to know if
@@ -277,39 +301,38 @@ function _render_gallery_gui_elements($nid, $gallery_info = NULL, $single_new_it
   if (!isset($gallery_info['media'])) {
     // This gallery is empty.
     $reorder_gallery_gui .= '<div class="empty">This CB Gallery is EMPTY.</div>';
-  }
-  else {
+  } else {
     // This gallery has child elements!
     // At this point we have returned the structured $gallery_info array
     // and should now loop through the elements to renter the proper HTML.
-    $reorder_gallery_gui='';  // Prep the string for the loop.
-    $i=0;                     // Set iterator for odd/even classes.
-
-    foreach ($gallery_info['media'] as $media) {// and we're off...
-
+    $reorder_gallery_gui = ''; // Prep the string for the loop.
+    $i                   = 0; // Set iterator for odd/even classes.
+    
+    foreach ($gallery_info['media'] as $media) { // and we're off...
+      
       // For display purposes, we will truncate the strings here
       // so that the text will fit in the smallest possible area
       // allowed in the CSS.
-      $media_name     = (isset($row->media_name) ? truncate_utf8($row->media_name, 58, FALSE, TRUE) : '');
-      $media_caption  = (!empty($row->media_caption) ? truncate_utf8($row->media_caption, 90, FALSE, TRUE) : 'No Caption');
-
+      $media_name    = (isset($row->media_name) ? truncate_utf8($row->media_name, 58, FALSE, TRUE) : '');
+      $media_caption = (!empty($row->media_caption) ? truncate_utf8($row->media_caption, 90, FALSE, TRUE) : 'No Caption');
+      
       // Here is the template for the sortable gallery images.
       // I did not see a reason to pass this to the themeing layer,
       // as it's look and feel is strictly administrative.
       // If you want to change it, be my guest, but be careful! :D
       // The HTML attributes that are used here have hooks into the JavaScript
       // and CSS that will break if tampered with.
-      $reorder_gallery_gui .= '<div id="img_' . ( isset($single_new_item) ? $single_new_item . '" style="display:none;' : $media['media_id'] ) . '" class="dragable clearfix' . ($i %2 ? ' even' : ' odd') . ( $single_new_item ? ' new_cb_addition' : '' ) . '">';
-      $reorder_gallery_gui .=  '<div class="media_menu">' . $media['media_type'] . ' | ';
-      $reorder_gallery_gui .=    '<a class="media_edit" onclick="return false;" href="/admin/cb_gallery_ajax/' . $media['media_id'] . '/edit_media">Edit</a> | ';
-      $reorder_gallery_gui .=    '<a class="media_delete" onclick="return false;" href="/admin/cb_gallery_ajax/' . $media['media_id'] . '/delete_media">Delete</a> | ';
-      $reorder_gallery_gui .=    '<a class="media_clone" onclick="return false;" href="/admin/cb_gallery_ajax/' . $media['media_id'] . '/edit_media">Clone</a>';
-      $reorder_gallery_gui .=  '</div>';
-      $reorder_gallery_gui .=  '<p class="img_wrapper"><img src="' . $media['thumbnail_path'] . '"/></p>';
-      $reorder_gallery_gui .=  '<div class="inner_wrap">';
-      $reorder_gallery_gui .=    '<h2>' . $media['media_name'] . '</h2>';
-      $reorder_gallery_gui .=    '<p class="media_caption">&nbsp;' . (!empty($media['media_caption']) ? $media['media_caption'] : 'No Caption.') . '</p>';
-      $reorder_gallery_gui .=  '</div>';
+      $reorder_gallery_gui .= '<div id="img_' . (isset($single_new_item) ? $single_new_item . '" style="display:none;' : $media['media_id']) . '" class="dragable clearfix' . ($i % 2 ? ' even' : ' odd') . ($single_new_item ? ' new_cb_addition' : '') . '">';
+      $reorder_gallery_gui .= '<div class="media_menu">' . $media['media_type'] . ' | ';
+      $reorder_gallery_gui .= '<a class="media_edit" onclick="return false;" href="/admin/cb_gallery_ajax/' . $media['media_id'] . '/edit_media">Edit</a> | ';
+      $reorder_gallery_gui .= '<a class="media_delete" onclick="return false;" href="/admin/cb_gallery_ajax/' . $media['media_id'] . '/delete_media">Delete</a> | ';
+      $reorder_gallery_gui .= '<a class="media_clone" onclick="return false;" href="/admin/cb_gallery_ajax/' . $media['media_id'] . '/edit_media">Clone</a>';
+      $reorder_gallery_gui .= '</div>';
+      $reorder_gallery_gui .= '<p class="img_wrapper"><img src="' . $media['thumbnail_path'] . '"/></p>';
+      $reorder_gallery_gui .= '<div class="inner_wrap">';
+      $reorder_gallery_gui .= '<h2>' . $media['media_name'] . '</h2>';
+      $reorder_gallery_gui .= '<p class="media_caption">&nbsp;' . (!empty($media['media_caption']) ? $media['media_caption'] : 'No Caption.') . '</p>';
+      $reorder_gallery_gui .= '</div>';
       $reorder_gallery_gui .= '</div>';
       $i++;
     }
@@ -326,33 +349,40 @@ function _render_gallery_gui_elements($nid, $gallery_info = NULL, $single_new_it
 function _media_processing($gallery_nid) {
   // Sanitize input array using PHP filters.
   $post_filter_args = array(
-    'title'                   => FILTER_SANITIZE_SPECIAL_CHARS,
-    'thumbnail_aspect_ratio'  => FILTER_SANITIZE_SPECIAL_CHARS,
-    'media_feature_type'      => FILTER_SANITIZE_SPECIAL_CHARS,
-    'media_name'              => FILTER_SANITIZE_SPECIAL_CHARS,
-    'media_type'              => FILTER_SANITIZE_SPECIAL_CHARS,
-    'media_caption'           => FILTER_SANITIZE_SPECIAL_CHARS,
-    'thumbnail_path'          => FILTER_SANITIZE_SPECIAL_CHARS,
+    'title' => FILTER_SANITIZE_SPECIAL_CHARS,
+    'thumbnail_aspect_ratio' => FILTER_SANITIZE_SPECIAL_CHARS,
+    'media_feature_type' => FILTER_SANITIZE_SPECIAL_CHARS,
+    'media_name' => FILTER_SANITIZE_SPECIAL_CHARS,
+    'media_type' => FILTER_SANITIZE_SPECIAL_CHARS,
+    'media_caption' => FILTER_SANITIZE_SPECIAL_CHARS,
+    'thumbnail_path' => FILTER_SANITIZE_SPECIAL_CHARS,
     // Video Embed Codes are HTML encoded when save into the database.
-    'video_embed_code'        => FILTER_SANITIZE_SPECIAL_CHARS,
-    'remote_image'            => FILTER_SANITIZE_URL,
-    'edit_media_id'           => FILTER_SANITIZE_NUMBER_INT,
-    'nivo_animSpeed'          => FILTER_SANITIZE_NUMBER_INT,
-    );
-
+    'video_embed_code' => FILTER_SANITIZE_SPECIAL_CHARS,
+    'remote_image' => FILTER_SANITIZE_URL,
+    'edit_media_id' => FILTER_SANITIZE_NUMBER_INT,
+    'nivo_animSpeed' => FILTER_SANITIZE_NUMBER_INT
+  );
+  
   $clean = filter_input_array(INPUT_POST, $post_filter_args);
-
-
-
+  
+  
+  
   // Set edit_media to FALSE if not set, or being manipulated.
-  $media_id = (empty($clean['edit_media_id']) ? FALSE : $clean['edit_media_id']);
+  $media_id               = (empty($clean['edit_media_id']) ? FALSE : $clean['edit_media_id']);
   // Sanatize gallery_id
-  $gallery_nid = (!is_numeric($gallery_nid) ? FALSE : $gallery_nid);
+  $gallery_nid            = (!is_numeric($gallery_nid) ? FALSE : $gallery_nid);
   $clean['media_content'] = ($clean['media_type'] == 'video' ? $clean['video_embed_code'] : $clean['remote_image']);
   // Media is being Edited with the ADMIN GUI
-  if ($media_id !== FALSE ) {
-    $sql = "UPDATE {cb_gallery_children} SET media_name = '%s', media_content = '%s', thumbnail_path = '%s', media_caption = '%s', media_type = '%s'  WHERE media_id = '%d';";
-    $args = array($clean['media_name'], $clean['media_content'], $clean['thumbnail_path'], $clean['media_caption'], $clean['media_type'], $media_id);
+  if ($media_id !== FALSE) {
+    $sql  = "UPDATE {cb_gallery_children} SET media_name = '%s', media_content = '%s', thumbnail_path = '%s', media_caption = '%s', media_type = '%s'  WHERE media_id = '%d';";
+    $args = array(
+      $clean['media_name'],
+      $clean['media_content'],
+      $clean['thumbnail_path'],
+      $clean['media_caption'],
+      $clean['media_type'],
+      $media_id
+    );
     // We need to send the new/edited media element back to
     // the admin GUI for display to the user. To do this, we
     // must return the new data as JSON.  In this case, we
@@ -360,39 +390,62 @@ function _media_processing($gallery_nid) {
     // No further SQL SELECT's required.
     if (db_query($sql, $args)) {
       // Render result data.
-      $message = array('message_class' => 'status', 'message' => t('Media has been updated.'));
-    }
-    else {
+      $message = array(
+        'message_class' => 'status',
+        'message' => t('Media has been updated.')
+      );
+    } else {
       // Render result data
-      $message = array('message_class' => 'error', 'message' => t('There was a problem updating this media.'));
+      $message = array(
+        'message_class' => 'error',
+        'message' => t('There was a problem updating this media.')
+      );
     }
     // Return HTML of single element.
-    $return_media_json = array('return_media' => _render_gallery_gui_elements($gallery_nid, NULL, $media_id));
-    $message = array('message_class' => 'status', 'message' => t('Media has been updated.'));
-  }
-  else {  // Media is being Inserted through the admin GUI.
-    $sql = "INSERT INTO {cb_gallery_children} (media_name, media_content, thumbnail_path, media_caption, media_type, nid) VALUES ('%s', '%s', '%s', '%s', '%s' ,'%d');";
-    $args = array($clean['media_name'], $clean['media_content'], $clean['thumbnail_path'], $clean['media_caption'], $clean['media_type'], $gallery_nid);
-
+    $return_media_json = array(
+      'return_media' => _render_gallery_gui_elements($gallery_nid, NULL, $media_id)
+    );
+    $message           = array(
+      'message_class' => 'status',
+      'message' => t('Media has been updated.')
+    );
+  } else { // Media is being Inserted through the admin GUI.
+    $sql  = "INSERT INTO {cb_gallery_children} (media_name, media_content, thumbnail_path, media_caption, media_type, nid) VALUES ('%s', '%s', '%s', '%s', '%s' ,'%d');";
+    $args = array(
+      $clean['media_name'],
+      $clean['media_content'],
+      $clean['thumbnail_path'],
+      $clean['media_caption'],
+      $clean['media_type'],
+      $gallery_nid
+    );
+    
     if (db_query($sql, $args)) {
       // Render result data.
-      $message = array('message_class' => 'status', 'message' => t('Media has been added to the gallery.'));
-    }
-    else {
+      $message = array(
+        'message_class' => 'status',
+        'message' => t('Media has been added to the gallery.')
+      );
+    } else {
       // Render result data
-      $message = array('message_class' => 'error', 'message' => t('There was a problem adding this media into the gallery.'));
+      $message = array(
+        'message_class' => 'error',
+        'message' => t('There was a problem adding this media into the gallery.')
+      );
     }
-     // I do not make a habit of excessive SQL.. but
-     // the following query is nessisitated by the jQuery.sortable() function.
-     // To render proper HTML, we MUST know the new media's media_id.
-     // it DOES require an additional query... But I can not think of
-     // another way around this at the moment.
-
-     // Pull the newest media_id.
+    // I do not make a habit of excessive SQL.. but
+    // the following query is nessisitated by the jQuery.sortable() function.
+    // To render proper HTML, we MUST know the new media's media_id.
+    // it DOES require an additional query... But I can not think of
+    // another way around this at the moment.
+    
+    // Pull the newest media_id.
     $sql_getHTMLforGUI = "SELECT media_id FROM {cb_gallery_children} ORDER BY media_id DESC LIMIT 1";
-    $row = db_fetch_object(db_query($sql_getHTMLforGUI));
+    $row               = db_fetch_object(db_query($sql_getHTMLforGUI));
     // Return HTML of single element.
-    $return_media_json = array('return_media' => _render_gallery_gui_elements($gallery_nid, NULL, $row->media_id));
+    $return_media_json = array(
+      'return_media' => _render_gallery_gui_elements($gallery_nid, NULL, $row->media_id)
+    );
   }
   // Add the new/edited media to the return JSON object.
   array_push($message, $return_media_json);
@@ -406,34 +459,33 @@ function cb_gallery_form($node, $form_state) {
   drupal_add_css(drupal_get_path('module', 'cb_gallery') . '/css/cb_gallery.css');
   drupal_add_js(drupal_get_path('module', 'cb_gallery') . '/js/cb_gallery.js');
   jquery_ui_add('ui.sortable'); // This is why we need the jQuery UI installed
-
+  
   // Get gallery data.
   if (isset($node->nid)) {
     $gallery_info = _get_cb_gallery_info($node->nid, NULL);
   }
-
+  
   // Because these may be hidden on-load, the classes are set, now based on
   // weather or not they should display.
-  $thumbnail_settings_fieldset_attributes = array();
-  $carousel_settings_fieldset_attributes = array();
-  $carousel_settings_fieldset_attributes['class'] = 'carousel_2_settings_fieldset';
+  $thumbnail_settings_fieldset_attributes          = array();
+  $carousel_settings_fieldset_attributes           = array();
+  $carousel_settings_fieldset_attributes['class']  = 'carousel_2_settings_fieldset';
   $thumbnail_settings_fieldset_attributes['class'] = 'thumbnail_settings_fieldset';
   if ($gallery_info['gallery_info']['media_feature_type'] == 'thumbnails') {
-    $carousel_settings_fieldset_attributes['style']='display:none;';
+    $carousel_settings_fieldset_attributes['style'] = 'display:none;';
+  } else {
+    $thumbnail_settings_fieldset_attributes['style'] = 'display:none;';
   }
-  else {
-    $thumbnail_settings_fieldset_attributes['style']='display:none;';
-  }
-
+  
   $form['gallery_info'] = array(
     '#title' => t('Gallery Information'),
     '#type' => 'fieldset',
     '#description' => t('Edit gallery specific information'),
     '#prefix' => '<div id="GalleryInformationTop"></div>',
     '#collapsible' => TRUE,
-    '#collapsed' => FALSE,
+    '#collapsed' => FALSE
   );
-
+  
   $form['gallery_info']['live_preview'] = array(
     '#value' => '
     <div id="live_preview" class="fourByThree">
@@ -450,150 +502,196 @@ function cb_gallery_form($node, $form_state) {
       </div>
     </div>'
   );
-$form['title'] = array(
+  $form['title']                        = array(
     '#title' => t('Administrative title of this gallery'),
     '#type' => 'textfield',
     '#default_value' => $node->title,
     '#description' => t('Only shown in admin pages, as a way to identify this piece of content.'),
-    '#attributes' => array('class' => 'input_gallery_title'),
-    '#required' => TRUE,
-    );
-  $form['display_title'] = array(
+    '#attributes' => array(
+      'class' => 'input_gallery_title'
+    ),
+    '#required' => TRUE
+  );
+  $form['display_title']                = array(
     '#title' => t('Display title for this gallery.'),
     '#type' => 'textfield',
     '#description' => t('Leave blank to hide H6 tag from display. This title will be shown to end-users when viewing this gallery.'),
     '#default_value' => (isset($gallery_info['gallery_info']['display_title']) ? $gallery_info['gallery_info']['display_title'] : NULL),
-    '#attributes' => array('class' => 'input_gallery_display_title'),
+    '#attributes' => array(
+      'class' => 'input_gallery_display_title'
+    ),
     '#required' => FALSE,
-    '#weight' => 0,
-    );
+    '#weight' => 0
+  );
   
-
+  
   $form['gallery_info']['media_feature_type'] = array(
     '#title' => t('Media Highlight Style'),
     '#type' => 'radios',
-    '#options' => array('thumbnails' => 'Thumbnails. (With Shadowbox)', 'carousel_2' => 'CB Carousel 2. (Optional Shadowbox)', 'gallery' => 'CB Gallery. (Carousel 2 with Thumbnails, and an Optional Shadowbox)', ),
+    '#options' => array(
+      'thumbnails' => 'Thumbnails. (With Shadowbox)',
+      'carousel_2' => 'CB Carousel 2. (Optional Shadowbox)',
+      'gallery' => 'CB Gallery. (Carousel 2 with Thumbnails, and an Optional Shadowbox)'
+    ),
     '#description' => t('When thumbnails are clicked, you can choose to open a shadowbox, or display the media in a viewport.'),
-    '#attributes' => array('class' => 'input_media_feature_type'),
+    '#attributes' => array(
+      'class' => 'input_media_feature_type'
+    ),
     '#default_value' => (isset($gallery_info['gallery_info']['media_feature_type']) ? $gallery_info['gallery_info']['media_feature_type'] : 'gallery'),
-    '#required' => TRUE,
-    );
-
-  $form['gallery_info']['thumbnail_settings'] = array(
+    '#required' => TRUE
+  );
+  
+  $form['gallery_info']['thumbnail_settings']                           = array(
     '#title' => t('Thumbnail Settings'),
     '#type' => 'fieldset',
     '#collapsible' => TRUE,
     '#attributes' => $thumbnail_settings_fieldset_attributes,
     '#collapsed' => FALSE,
-    '#tree' => TRUE,
+    '#tree' => TRUE
   );
   $form['gallery_info']['thumbnail_settings']['thumbnail_aspect_ratio'] = array(
     '#title' => t('Aspect ratio calculator / Auto-height machine.'),
     '#type' => 'radios',
-    '#options' => array('4:3' => '4:3.', '16:9' => '16:9.', '1:1' => '1:1. (Square Grid)', 'custom_height' => 'Custom Height', 'auto' => 'Do not constrain height. (Only use if all your images are already uniform size.)'), //TODO: Add "Custom" with new textfield for height.
-    '#default_value' => (isset($gallery_info['gallery_info']['thumbnail_settings']['thumbnail_aspect_ratio']) ? $gallery_info['gallery_info']['thumbnail_settings']['thumbnail_aspect_ratio']: '16:9'),
+    '#options' => array(
+      '4:3' => '4:3.',
+      '16:9' => '16:9.',
+      '1:1' => '1:1. (Square Grid)',
+      'custom_height' => 'Custom Height',
+      'auto' => 'Do not constrain height. (Only use if all your images are already uniform size.)'
+    ), //TODO: Add "Custom" with new textfield for height.
+    '#default_value' => (isset($gallery_info['gallery_info']['thumbnail_settings']['thumbnail_aspect_ratio']) ? $gallery_info['gallery_info']['thumbnail_settings']['thumbnail_aspect_ratio'] : '16:9'),
     '#description' => t('The aspect ratio of thumbnail images.'),
-    '#attributes' => array('class' => 'input_thumbnail_ratio'),
-    '#required' => FALSE,
-    );
-  $form['gallery_info']['thumbnail_settings']['thumbnail_height'] = array(
-      '#title' => t('Height (in pixels), by which to constrain the thumbnail images'),
-      '#type' => 'textfield',
-      '#description' => t('Image height / width can not be set on a per-image basis.'),
-      '#attributes' => array('class' => 'input_thumbnail_height'),
-      '#default_value' => $gallery_info['gallery_info']['thumbnail_height'],
-      '#required' => FALSE,
+    '#attributes' => array(
+      'class' => 'input_thumbnail_ratio'
+    ),
+    '#required' => FALSE
   );
-  $form['gallery_info']['thumbnail_settings']['thumbnail_width'] = array(
-      '#title' => t('Width (in pixels), by which to constrain the thumbnail images'),
-      '#type' => 'textfield',
-      '#description' => t('THIS FIELD IS REQUIRED. If EMPTY 100 will be used. The width is manually controlled here, while the height will be automatically calculated based on the aspect ratio selected above.'),
-      '#attributes' => array('class' => 'input_thumbnail_width'),
-      '#default_value' => (isset($gallery_info['gallery_info']['thumbnail_width']) ? $gallery_info['gallery_info']['thumbnail_width'] : 100),
-      '#required' => FALSE,
+  $form['gallery_info']['thumbnail_settings']['thumbnail_height']       = array(
+    '#title' => t('Height (in pixels), by which to constrain the thumbnail images'),
+    '#type' => 'textfield',
+    '#description' => t('Image height / width can not be set on a per-image basis.'),
+    '#attributes' => array(
+      'class' => 'input_thumbnail_height'
+    ),
+    '#default_value' => $gallery_info['gallery_info']['thumbnail_height'],
+    '#required' => FALSE
   );
-
+  $form['gallery_info']['thumbnail_settings']['thumbnail_width']        = array(
+    '#title' => t('Width (in pixels), by which to constrain the thumbnail images'),
+    '#type' => 'textfield',
+    '#description' => t('THIS FIELD IS REQUIRED. If EMPTY 100 will be used. The width is manually controlled here, while the height will be automatically calculated based on the aspect ratio selected above.'),
+    '#attributes' => array(
+      'class' => 'input_thumbnail_width'
+    ),
+    '#default_value' => (isset($gallery_info['gallery_info']['thumbnail_width']) ? $gallery_info['gallery_info']['thumbnail_width'] : 100),
+    '#required' => FALSE
+  );
+  
   // Carousel 2 Settings!
-  $form['gallery_info']['carousel_settings'] = array(
+  $form['gallery_info']['carousel_settings']                   = array(
     '#title' => t('Carousel Settings'),
     '#type' => 'fieldset',
     '#collapsible' => TRUE,
     '#attributes' => $carousel_settings_fieldset_attributes,
     '#collapsed' => FALSE,
-    '#tree' => TRUE,
+    '#tree' => TRUE
   );
-  $form['gallery_info']['carousel_settings']['height'] = array(
+  $form['gallery_info']['carousel_settings']['height']         = array(
     '#title' => 'Height',
     '#default_value' => t(isset($gallery_info['gallery_info']['carousel_settings']['height']) ? $gallery_info['gallery_info']['carousel_settings']['height'] : 300),
     '#type' => 'textfield',
-    '#attributes' => array('class' => 'input_carousel_height'),
+    '#attributes' => array(
+      'class' => 'input_carousel_height'
+    ),
     '#description' => t('Height in pixels'),
-    '#size' => 4,
+    '#size' => 4
   );
-  $form['gallery_info']['carousel_settings']['width'] = array(
+  // JH - Hidden and disabled. Not lazy, just not sure.
+  $form['gallery_info']['carousel_settings']['width']          = array(
     '#title' => 'Width',
     '#default_value' => t(isset($gallery_info['gallery_info']['carousel_settings']['width']) ? $gallery_info['gallery_info']['carousel_settings']['width'] : 500),
-    '#type' => 'textfield',
-    '#attributes' => array('class' => 'input_carousel_width'),
+    '#type' => 'hidden',
+    '#disabled' => true,
+    '#attributes' => array(
+      'class' => 'input_carousel_width'
+    ),
     '#description' => t('Width in pixels'),
-    '#size' => 4,
+    '#size' => 4
   );
-  $form['gallery_info']['carousel_settings']['display'] = array(
+  $form['gallery_info']['carousel_settings']['display']        = array(
     '#title' => 'Display Count',
     '#default_value' => t(isset($gallery_info['gallery_info']['carousel_settings']['display']) ? $gallery_info['gallery_info']['carousel_settings']['display'] : 1),
     '#type' => 'textfield',
-    '#attributes' => array('class' => 'input_carousel_display'),
+    '#attributes' => array(
+      'class' => 'input_carousel_display'
+    ),
     '#description' => t('How many pictures do you want visible? This number should be divisible by the total amount of pictures.
     	If this number is not divisible by the total amount of images, the carousel will behave as if "single incremental slide" is checked.'),
-    '#size' => 2,
+    '#size' => 2
   );
-  $form['gallery_info']['carousel_settings']['move_amount'] = array(
+  $form['gallery_info']['carousel_settings']['move_amount']    = array(
     '#title' => t('Auto-slide, one image at a time.'),
-    '#attributes' => array('class' => 'input_carousel_move_amount'),
+    '#attributes' => array(
+      'class' => 'input_carousel_move_amount'
+    ),
     '#default_value' => (isset($gallery_info['gallery_info']['carousel_settings']['move_amount']) ? $gallery_info['gallery_info']['carousel_settings']['move_amount'] : ''),
-    '#type' => 'checkbox',
+    '#type' => 'checkbox'
   );
-  $form['gallery_info']['carousel_settings']['controls'] = array(
+  $form['gallery_info']['carousel_settings']['controls']       = array(
     '#title' => t('Display "Prev and Next" buttons.'),
-    '#attributes' => array('class' => 'input_carousel_controls'),
+    '#attributes' => array(
+      'class' => 'input_carousel_controls'
+    ),
     '#default_value' => (isset($gallery_info['gallery_info']['carousel_settings']['controls']) ? $gallery_info['gallery_info']['carousel_settings']['controls'] : ''),
-    '#type' => 'checkbox',
+    '#type' => 'checkbox'
   );
-  $form['gallery_info']['carousel_settings']['pager'] = array(
+  $form['gallery_info']['carousel_settings']['pager']          = array(
     '#title' => t('Display numbered pager buttons'),
-    '#attributes' => array('class' => 'input_carousel_pager'),
+    '#attributes' => array(
+      'class' => 'input_carousel_pager'
+    ),
     '#default_value' => (isset($gallery_info['gallery_info']['carousel_settings']['pager']) ? $gallery_info['gallery_info']['carousel_settings']['pager'] : ''),
-    '#type' => 'checkbox',
+    '#type' => 'checkbox'
   );
-  $form['gallery_info']['carousel_settings']['overlay'] = array(
+  $form['gallery_info']['carousel_settings']['overlay']        = array(
     '#title' => t('Display an overlay over part of the image.'),
-    '#attributes' => array('class' => 'input_carousel_overlay'),
+    '#attributes' => array(
+      'class' => 'input_carousel_overlay'
+    ),
     '#default_value' => (isset($gallery_info['gallery_info']['carousel_settings']['overlay']) ? $gallery_info['gallery_info']['carousel_settings']['overlay'] : ''),
-    '#type' => 'checkbox',
+    '#type' => 'checkbox'
   );
   $form['gallery_info']['carousel_settings']['overlay_toggle'] = array(
     '#title' => t('Toggle overlay on mouse over?'),
-    '#attributes' => array('class' => 'input_carousel_overlay_toggle'),
+    '#attributes' => array(
+      'class' => 'input_carousel_overlay_toggle'
+    ),
     '#default_value' => (isset($gallery_info['gallery_info']['carousel_settings']['overlay_toggle']) ? $gallery_info['gallery_info']['carousel_settings']['overlay_toggle'] : ''),
-    '#type' => 'checkbox',
+    '#type' => 'checkbox'
   );
-  $form['gallery_info']['carousel_settings']['shadowbox'] = array(
+  $form['gallery_info']['carousel_settings']['shadowbox']      = array(
     '#title' => t('When a featured image is clicked, open a Shadowbox.'),
-    '#attributes' => array('class' => 'input_carousel_shadowbox'),
+    '#attributes' => array(
+      'class' => 'input_carousel_shadowbox'
+    ),
     '#default_value' => (isset($gallery_info['gallery_info']['carousel_settings']['shadowbox']) ? $gallery_info['gallery_info']['carousel_settings']['shadowbox'] : ''),
-    '#type' => 'checkbox',
+    '#type' => 'checkbox'
   );
   $form['gallery_info']['carousel_settings']['overlay_height'] = array(
     '#title' => t('Overlay height'),
-    '#attributes' => array('class' => 'input_carousel_overlay_height'),
+    '#attributes' => array(
+      'class' => 'input_carousel_overlay_height'
+    ),
     '#default_value' => (isset($gallery_info['gallery_info']['carousel_settings']['overlay_height']) ? $gallery_info['gallery_info']['carousel_settings']['overlay_height'] : 150),
     '#type' => 'textfield',
     '#description' => t('Overlay height in pixels.'),
-    '#size' => 4,
+    '#size' => 4
   );
-  $form['gallery_info']['carousel_settings']['overlay_y'] = array(
+  $form['gallery_info']['carousel_settings']['overlay_y']      = array(
     '#title' => t('Overlay Vertical position. (y-axis offset)'),
-    '#attributes' => array('class' => 'input_carousel_overlay_y'),
+    '#attributes' => array(
+      'class' => 'input_carousel_overlay_y'
+    ),
     '#default_value' => (isset($gallery_info['gallery_info']['carousel_settings']['overlay_y']) ? $gallery_info['gallery_info']['carousel_settings']['overlay_y'] : 0),
     '#type' => 'textfield',
     '#description' => t('Overlay Y-axis offset in px. Default = Distance between TOP OF OVERLAY and TOP OF CAROUSEL.
@@ -602,47 +700,57 @@ $form['title'] = array(
                         <li>Entering "!100" (sans quotes) = Bottom of overlay should be 100px from bottom of carousel.</li>
                         <li>Entering "0" (sans quotes) = Top of overlay should be 0px from top of carousel. (Flush against top.)</li>
                         <li>Entering "!0" (sans quotes) = Bottom of overlay should be 0px from bottom of carousel. (Flush against bottom.)</li></ul>'),
-    '#size' => 4,
+    '#size' => 4
   );
-  $form['gallery_info']['carousel_settings']['interval_time'] = array(
+  $form['gallery_info']['carousel_settings']['interval_time']  = array(
     '#title' => 'Pause time (in milliseconds) before moving to the next image.',
     '#default_value' => t(isset($gallery_info['gallery_info']['carousel_settings']['interval_time']) ? $gallery_info['gallery_info']['carousel_settings']['interval_time'] : 4000),
     '#type' => 'textfield',
-    '#attributes' => array('class' => 'input_carousel_interval_timesend_to_cb_parents'),
+    '#attributes' => array(
+      'class' => 'input_carousel_interval_timesend_to_cb_parents'
+    ),
     '#description' => t('Pause time (in seconds) between image transitions.'),
-    '#size' => 4,
+    '#size' => 4
   );
-  $form['gallery_info']['carousel_settings']['duration'] = array(
+  $form['gallery_info']['carousel_settings']['duration']       = array(
     '#title' => 'Animation time (in miliseconds) to switch from one image to another.',
     '#default_value' => (isset($gallery_info['gallery_info']['carousel_settings']['duration']) ? $gallery_info['gallery_info']['carousel_settings']['duration'] : 1000),
     '#type' => 'textfield',
-    '#attributes' => array('class' => 'input_carousel_duration'),
+    '#attributes' => array(
+      'class' => 'input_carousel_duration'
+    ),
     '#description' => t('Once an animation has begun, a certain amount of time must be declared upon which to amortize the movement.'),
-    '#size' => 4,
+    '#size' => 4
   );
-  $form['gallery_info']['carousel_settings']['flickr_set'] = array(
+  $form['gallery_info']['carousel_settings']['flickr_set']     = array(
     '#title' => 'Flickr Set',
     '#default_value' => t(isset($gallery_info['gallery_info']['carousel_settings']['flickr_set']) ? $gallery_info['gallery_info']['carousel_settings']['flickr_set'] : ''),
     '#type' => $flickr_type,
-    '#attributes' => array('class' => 'input_carousel_flickr_set'),
-    '#description' => t('Flickr Set ID. If you want to pull images from Flickr, put the SET ID here.'),
+    '#attributes' => array(
+      'class' => 'input_carousel_flickr_set'
+    ),
+    '#description' => t('Flickr Set ID. If you want to pull images from Flickr, put the SET ID here.')
   );
-  $form['gallery_info']['carousel_settings']['flickr_api'] = array(
+  $form['gallery_info']['carousel_settings']['flickr_api']     = array(
     '#title' => 'Flickr API',
-    '#attributes' => array('class' => 'input_carousel_flickr_api'),
-    '#default_value' =>  t(isset($gallery_info['gallery_info']['carousel_settings']['flickr_api']) ? $gallery_info['gallery_info']['carousel_settings']['flickr_api'] : ''),
+    '#attributes' => array(
+      'class' => 'input_carousel_flickr_api'
+    ),
+    '#default_value' => t(isset($gallery_info['gallery_info']['carousel_settings']['flickr_api']) ? $gallery_info['gallery_info']['carousel_settings']['flickr_api'] : ''),
     '#type' => (module_exists('flickrapi') ? 'textfield' : 'hidden'),
-    '#description' => t('Flickr API Key. To pull from your Flickr feed, you must have a valid Flickr API KEY. '),
+    '#description' => t('Flickr API Key. To pull from your Flickr feed, you must have a valid Flickr API KEY. ')
   );
-  $form['gallery_info']['unique_css_block_class'] = array(
+  $form['gallery_info']['unique_css_block_class']              = array(
     '#title' => t('CSS class to put in outermost div. (Makes styleing/themeing easier.)'),
     '#type' => 'textfield',
     '#description' => t('Space delimited CSS class names. The text entered in here will be placed in the "class" attribute of the outermost div surrounding this node. ie. It\'s Block. '),
-    '#attributes' => array('class' => 'input_unique_css_block_class'),
+    '#attributes' => array(
+      'class' => 'input_unique_css_block_class'
+    ),
     '#default_value' => $gallery_info['gallery_info']['unique_css_block_class'],
-    '#required' => FALSE,
+    '#required' => FALSE
   );
-
+  
   if (isset($node->nid)) { // Being EDITed. Not ADDed.
     // Render all sortable gallery elements (without calling another query).
     $reorder_gallery_gui .= '<h3 class="gallery_title">Change the order of your gallery.</h3>';
@@ -651,125 +759,165 @@ $form['title'] = array(
     $reorder_gallery_gui .= _render_gallery_gui_elements($node->nid, $gallery_info, NULL);
     $reorder_gallery_gui .= '</div>';
     
-  $form['new_media'] = array(
-    '#title' => t('Add New Image/Video'),
-    '#type' => 'fieldset',
-    '#description' => t('Go ahead and add an item to your gallery using the form below. If you want to edit an existing gallery item, scroll down and click the edit button of the gallery image you want to edit! It&#39;s that easy!'),
-    '#collapsible' => TRUE,
-    '#attributes' => array('class' => 'new_media_fieldset'),
-    '#prefix' => '<div id="NewMediaFormTop"></div>',
-    '#collapsed' => TRUE
+    $form['new_media'] = array(
+      '#title' => t('Add New Image/Video'),
+      '#type' => 'fieldset',
+      '#description' => t('Go ahead and add an item to your gallery using the form below. If you want to edit an existing gallery item, scroll down and click the edit button of the gallery image you want to edit! It&#39;s that easy!'),
+      '#collapsible' => TRUE,
+      '#attributes' => array(
+        'class' => 'new_media_fieldset'
+      ),
+      '#prefix' => '<div id="NewMediaFormTop"></div>',
+      '#collapsed' => TRUE
     );
-
-  $form['new_media']['media_name'] = array(
-    '#title' => t('Human Readable Name For This Image or Video'),
-    '#type' => 'textfield',
-    '#description' => t('This name is used in the alt tag for images and thumbnails. example: Picture of the Collegeboard Content Editors.'),
-    '#attributes' => array('class' => 'input_image_name send_to_cb_children'),
-    '#required' => FALSE
+    
+    $form['new_media']['media_name'] = array(
+      '#title' => t('Human Readable Name For This Image or Video'),
+      '#type' => 'textfield',
+      '#description' => t('This name is used in the alt tag for images and thumbnails. example: Picture of the Collegeboard Content Editors.'),
+      '#attributes' => array(
+        'class' => 'input_image_name send_to_cb_children'
+      ),
+      '#required' => FALSE
     );
-
-  $form['new_media']['media_caption'] = array(
-    '#title' => t('Optional Image Caption (HTML okay)'),
-    '#type' => 'textarea',
-    '#description' => t('Use create a caption for this image. Leave blank if you do not want a caption.'),
-    '#attributes' => array('class' => 'input_image_caption send_to_cb_children'),
-    '#required' => FALSE
+    
+    $form['new_media']['media_caption'] = array(
+      '#title' => t('Optional Image Caption (HTML okay)'),
+      '#type' => 'textarea',
+      '#description' => t('Use create a caption for this image. Leave blank if you do not want a caption.'),
+      '#attributes' => array(
+        'class' => 'input_image_caption send_to_cb_children'
+      ),
+      '#required' => FALSE
     );
-
-  $form['new_media']['thumbnail_path'] = array(
-    '#title' => t('Thumbnail Image URL'),
-    '#type' => 'textfield',
-    '#attributes' => array('class' => 'input_thumbnail_path send_to_cb_children'),
-    '#description' => t('Use this field to define a thumbnail image to use for this Image or Video.'),
-    '#required' => FALSE
+    
+    $form['new_media']['thumbnail_path'] = array(
+      '#title' => t('Thumbnail Image URL'),
+      '#type' => 'textfield',
+      '#attributes' => array(
+        'class' => 'input_thumbnail_path send_to_cb_children'
+      ),
+      '#description' => t('Use this field to define a thumbnail image to use for this Image or Video.'),
+      '#required' => FALSE
     );
-
-  $form['new_media']['media_type'] = array(
-    '#title' => t('What type of meida are you adding to this gallery?'),
-    '#description' => t('ALL images should be hosted elsewhere, already cropped to your desired aspect ratio.'),
-    '#type' => 'radios',
-    '#options' => array(t('image') => 'Image.', t('video') => 'Video.'),
-    '#attributes' => array('class' => 'input_object_type send_to_cb_children'),
-    '#required' => FALSE
+    
+    $form['new_media']['media_type'] = array(
+      '#title' => t('What type of meida are you adding to this gallery?'),
+      '#description' => t('ALL images should be hosted elsewhere, already cropped to your desired aspect ratio.'),
+      '#type' => 'radios',
+      '#options' => array(
+        t('image') => 'Image.',
+        t('video') => 'Video.'
+      ),
+      '#attributes' => array(
+        'class' => 'input_object_type send_to_cb_children'
+      ),
+      '#required' => FALSE
     );
-
-  $form['new_media']['add_video'] = array(
-    '#title' => t('Add a Video'),
-    '#type' => 'fieldset',
-    '#description' => t('Add a video using this fieldset.'),
-    '#collapsible' => FALSE,
-    '#collapsed' => FALSE,
-    '#attributes' => array('class' => 'video_fieldset', 'style' => 'display:none;'),
+    
+    $form['new_media']['add_video'] = array(
+      '#title' => t('Add a Video'),
+      '#type' => 'fieldset',
+      '#description' => t('Add a video using this fieldset.'),
+      '#collapsible' => FALSE,
+      '#collapsed' => FALSE,
+      '#attributes' => array(
+        'class' => 'video_fieldset',
+        'style' => 'display:none;'
+      )
     );
-
-  $form['new_media']['add_image'] = array(
-    '#title' => t('Add an Image'),
-    '#type' => 'fieldset',
-    '#description' => t('ALL images should be hosted elsewhere, already cropped to your desired aspect ratio.'),
-    '#collapsible' => FALSE,
-    '#collapsed' => FALSE,
-    '#attributes' => array('class' => 'image_fieldset', 'style' => 'display:none;'),
+    
+    $form['new_media']['add_image'] = array(
+      '#title' => t('Add an Image'),
+      '#type' => 'fieldset',
+      '#description' => t('ALL images should be hosted elsewhere, already cropped to your desired aspect ratio.'),
+      '#collapsible' => FALSE,
+      '#collapsed' => FALSE,
+      '#attributes' => array(
+        'class' => 'image_fieldset',
+        'style' => 'display:none;'
+      )
     );
-
-  $form['new_media']['add_image']['remote_image'] = array(
-    '#title' => t('Remote Image URL'),
-    '#type' => 'textfield',
-    '#description' => t('Remote Image URL'),
-    '#attributes' => array('class' => 'input_remote_image send_to_cb_children'),
+    
+    $form['new_media']['add_image']['remote_image'] = array(
+      '#title' => t('Remote Image URL'),
+      '#type' => 'textfield',
+      '#description' => t('Remote Image URL'),
+      '#attributes' => array(
+        'class' => 'input_remote_image send_to_cb_children'
+      )
     );
-
-  $form['new_media']['add_video']['video_embed_code'] = array(
-    '#title' => t('Video Embed Code'),
-    '#type' => 'textarea',
-    '#description' => t('Paste your video embed code here.'),
-    '#attributes' => array('class' => 'input_video_embed_code send_to_cb_children'),
+    
+    $form['new_media']['add_video']['video_embed_code'] = array(
+      '#title' => t('Video Embed Code'),
+      '#type' => 'textarea',
+      '#description' => t('Paste your video embed code here.'),
+      '#attributes' => array(
+        'class' => 'input_video_embed_code send_to_cb_children'
+      )
     );
-
-  $form['new_media']['submit_edit_media'] = array(
-    '#type' => 'submit',
-    '#value' => t('Save Edits'),
-    '#attributes' => array('class' => 'submit_edit_media_button', 'style' => 'display:none', 'onclick' => 'return false;'),
+    
+    $form['new_media']['submit_edit_media'] = array(
+      '#type' => 'submit',
+      '#value' => t('Save Edits'),
+      '#attributes' => array(
+        'class' => 'submit_edit_media_button',
+        'style' => 'display:none',
+        'onclick' => 'return false;'
+      )
     );
-  $form['new_media']['add_media_button'] = array(
-    '#type' => 'submit',
-    '#value' => t('Add to Gallery'),
-    '#attributes' => array('class' => 'submit_new_media', 'onclick' => 'return false;')
+    $form['new_media']['add_media_button']  = array(
+      '#type' => 'submit',
+      '#value' => t('Add to Gallery'),
+      '#attributes' => array(
+        'class' => 'submit_new_media',
+        'onclick' => 'return false;'
+      )
     );
-
-  $form['new_media']['cancel_edit_media'] = array(
-    '#type' => 'submit',
-    '#value' => t('Cancel'),
-    '#prefix' => '&nbsp;&nbsp;&nbsp;',
-    '#attributes' => array('class' => 'cancel_edit_media_button', 'style' => 'display:none', 'onclick' => 'return false;')
+    
+    $form['new_media']['cancel_edit_media'] = array(
+      '#type' => 'submit',
+      '#value' => t('Cancel'),
+      '#prefix' => '&nbsp;&nbsp;&nbsp;',
+      '#attributes' => array(
+        'class' => 'cancel_edit_media_button',
+        'style' => 'display:none',
+        'onclick' => 'return false;'
+      )
     );
-
-  $form['edit_media_id'] = array(
-    '#title' => t('Video Embed Code'),
-    '#type' => 'hidden',
-    '#description' => t('edit_media_id'),
-    '#attributes' => array('class' => 'edit_media_id send_to_cb_children')
+    
+    $form['edit_media_id'] = array(
+      '#title' => t('Video Embed Code'),
+      '#type' => 'hidden',
+      '#description' => t('edit_media_id'),
+      '#attributes' => array(
+        'class' => 'edit_media_id send_to_cb_children'
+      )
     );
-
-  $form['gallery_nid'] = array(
-    '#title' => t('Gallery NID'),
-    '#type' => 'hidden',
-    '#description' => t('gallery_nid'),
-    '#attributes' => array('class' => 'gallery_nid send_to_cb_children'),
-    '#default_value' => $node->nid
+    
+    $form['gallery_nid'] = array(
+      '#title' => t('Gallery NID'),
+      '#type' => 'hidden',
+      '#description' => t('gallery_nid'),
+      '#attributes' => array(
+        'class' => 'gallery_nid send_to_cb_children'
+      ),
+      '#default_value' => $node->nid
     );
-
-  $form['reorder_gallery'] = array(
-    '#title' => t('Reorder Gallery'),
-    '#type' => 'fieldset',
-    '#description' => t('Reorder your gallery elements'),
-    '#collapsible' => TRUE,
-    '#attributes' => array('class' => 'reorder_gallery_fieldset'),
-    '#collapsed' => FALSE
+    
+    $form['reorder_gallery'] = array(
+      '#title' => t('Reorder Gallery'),
+      '#type' => 'fieldset',
+      '#description' => t('Reorder your gallery elements'),
+      '#collapsible' => TRUE,
+      '#attributes' => array(
+        'class' => 'reorder_gallery_fieldset'
+      ),
+      '#collapsed' => FALSE
     );
-
-  $form['reorder_gallery']['this_gallery'] = array(
-    '#value' => $reorder_gallery_gui
+    
+    $form['reorder_gallery']['this_gallery'] = array(
+      '#value' => $reorder_gallery_gui
     );
   }
   return $form;
@@ -789,17 +937,17 @@ function cb_gallery_theme_registry_alter(&$registry) {
 function _serialize_thumbnail_and_carousel_settings($node, &$carousel, &$thumbs) {
   // Seperate the structured data-set array of carousel/thumbnail variables
   $carousel = array();
-  $thumbs = array();
-
+  $thumbs   = array();
+  
   foreach ($node->carousel_settings as $key => $val) {
     $serialize_me_carousel[$key] = $val;
   }
   foreach ($node->thumbnail_settings as $key => $val) {
     $serialize_me_thumbnail[$key] = $val;
   }
-
+  
   $carousel = serialize($serialize_me_carousel);
-  $thumbs = serialize($serialize_me_thumbnail);
+  $thumbs   = serialize($serialize_me_thumbnail);
 }
 /**
  * Implements hook_nodeapi()
@@ -808,34 +956,50 @@ function cb_gallery_nodeapi(&$node, $op, $a3 = NULL, $a4 = NULL) {
   if ($node->type == 'cb_gallery') {
     switch ($op) {
       case 'update':
-
+        
         $carousel_2_serialized_settings = array();
-        $thumbnail_serialized_settings = array();
+        $thumbnail_serialized_settings  = array();
         _serialize_thumbnail_and_carousel_settings($node, $carousel_2_serialized_settings, $thumbnail_serialized_settings);
-
+        
         $sql  = "UPDATE {cb_gallery_parents} SET  media_feature_type='%s', unique_css_block_class='%s', display_title='%s', carousel_2_serialized_settings='%s', thumbnail_serialized_settings='%s' WHERE nid='%d';";
-        $args = array($node->media_feature_type, $node->unique_css_block_class, $node->display_title, $carousel_2_serialized_settings, $thumbnail_serialized_settings, $node->nid);
+        $args = array(
+          $node->media_feature_type,
+          $node->unique_css_block_class,
+          $node->display_title,
+          $carousel_2_serialized_settings,
+          $thumbnail_serialized_settings,
+          $node->nid
+        );
         db_query($sql, $args);
-      break;
+        break;
       case 'insert':
-
+        
         $carousel_2_serialized_settings = array();
-        $thumbnail_serialized_settings = array();
+        $thumbnail_serialized_settings  = array();
         _serialize_thumbnail_and_carousel_settings($node, $carousel_2_serialized_settings, $thumbnail_serialized_settings);
-
+        
         // Only the parent gallery is being created. The child elements will be coming as an 'update.'
         // Always DELETE, THEN INSERT from the parent gallery. UPDATE is unnessisairy.
         $sql  = "DELETE FROM {cb_gallery_parents} WHERE nid='%d';";
-        $args = array($node->nid);
+        $args = array(
+          $node->nid
+        );
         db_query($sql, $args);
-
+        
         $sql  = "INSERT INTO {cb_gallery_parents} (nid,  media_feature_type, display_title, unique_css_block_class, carousel_2_serialized_settings, thumbnail_serialized_settings) VALUES ('%d','%s', '%s','%s', '%s', '%s');";
-        $args = array($node->nid, $node->media_feature_type, $node->display_title, $node->unique_css_block_class, $carousel_2_serialized_settings, $thumbnail_serialized_settings);
+        $args = array(
+          $node->nid,
+          $node->media_feature_type,
+          $node->display_title,
+          $node->unique_css_block_class,
+          $carousel_2_serialized_settings,
+          $thumbnail_serialized_settings
+        );
         db_query($sql, $args);
-      break;
+        break;
       case "view":
         // How is this diff from preprocess_node?
-      break;
+        break;
     }
   }
 }
@@ -850,22 +1014,23 @@ function _getSlidesFromFlickrFeed($carousel_2_settings = NULL) {
   }
   // Require the Flikr API to continue
   require_once(drupal_get_path('module', 'flickrapi') . '/phpFlickr/phpFlickr.php');
-
-  $f = new phpFlickr($carousel_2_settings['flickr_api']);
+  
+  $f      = new phpFlickr($carousel_2_settings['flickr_api']);
   $flickr = $f->photosets_getPhotos($carousel_2_settings['flickr_set'], $extras = NULL, $privacy_filter = NULL, $per_page = NULL, $page = NULL, $media = NULL);
-
+  
   // Loop through each image from the flickr feed.
   foreach ($flickr['photoset']['photo'] as $key => $photo) {
-    $photo_title = $photo['title'];
-    $photo_title = str_replace(' ', '_', $photo['title']);
-    $photo_url = $photo['id'];
-    $photo_url_s = $f->buildPhotoURL($photo, $size = "Thumbnail");
-    $photo_url_l = $f->buildPhotoURL($photo, $size = "Medium 640");
+    $photo_title  = $photo['title'];
+    $photo_title  = str_replace(' ', '_', $photo['title']);
+    $photo_url    = $photo['id'];
+    $photo_url_s  = $f->buildPhotoURL($photo, $size = "Thumbnail");
+    $photo_url_l  = $f->buildPhotoURL($photo, $size = "Medium 640");
     $photo_url_xl = $f->buildPhotoURL($photo, $size = "Large");
     list($img_actual_width, $img_actual_height) = getimagesize($photo_url_xl);
     // JH - Effing idiot! do this math once outside the loop. Sorry to all
     // JH - programmers everywhere.
-    // DS - I am not quite clear why we use the % here.
+    // DS - I am not quite clear why we use the % here. 
+    // JH - It's modulus. 
     if ($carousel_2_settings['pager'] == 1) {
       if ($key % $carousel_2_settings['display'] == 0) {
         $page_count++;
@@ -902,68 +1067,84 @@ function _getSlidesFromFlickrFeed($carousel_2_settings = NULL) {
  * themeing layer.
  */
 function cb_gallery_preprocess_node(&$variables) {
-
   // Add JS and CSS required to view this node.
-  drupal_add_css(drupal_get_path('module', 'cb_gallery') . '/css/cb_gallery.css');// should not be the same CSS as the admin CSS.
-  drupal_add_js(drupal_get_path('module', 'cb_gallery') . '/js/cb_gallery.js');   // should not be the same JS as the admin JS.
-  drupal_add_css(drupal_get_path('module', 'cb_gallery') . '/include/carousel_2/css/carousel_2.css');
-  drupal_add_js(drupal_get_path('module', 'cb_gallery') . '/include/carousel_2/js/jquery.tinycarousel.js');
-  drupal_add_js(drupal_get_path('module', 'cb_gallery') . '/include/carousel_2/js/carousel_2.js');
-
+  drupal_add_css(drupal_get_path('module', 'cb_gallery') . '/css/cb_gallery.css'); // should not be the same CSS as the admin CSS.
+  drupal_add_css(drupal_get_path('module', 'cb_gallery') . '/css/carousel_2.css');
+  
+  drupal_add_js(drupal_get_path('module', 'cb_gallery') . '/js/cb_gallery.js'); // should not be the same JS as the admin JS.
+  drupal_add_js(drupal_get_path('module', 'cb_gallery') . '/js/jquery.tinycarousel.js');
+  drupal_add_js(drupal_get_path('module', 'cb_gallery') . '/js/carousel_2.js');
+  
   // Set the template files to load the node template.
   if ($variables['node']->cb_gallery) {
     array_unshift($variables['template_files'], 'node-cb_gallery');
   }
   // Pull the gallery info data.
-  $cb_gallery = _get_cb_gallery_info($variables['nid'], $single_new_item = NULL);
+  $cb_gallery               = _get_cb_gallery_info($variables['nid'], $single_new_item = NULL);
   // Set Defaults.
-  $default_vid_width = 853;
-  $default_vid_height =  480;
-  $media_feature_type = $cb_gallery['gallery_info']['media_feature_type']; // cut down on code.
-  $is_using_viewport = (in_array($media_feature_type, array('gallery', 'carousel')) ? TRUE : FALSE);
-  $is_using_thumbport = (in_array($media_feature_type, array('thumbnails', 'gallery')) ? TRUE : FALSE);
-  $acceptable_image_formats = array('jpg', 'jpeg', 'png', 'gif');
-  $acceptable_video_formats = array('webm', 'mp4', 'ogv');
-  $pager_list_items =''; // Will be replaced with LI's used for paging buttons.
-  $carousel_settings = $cb_gallery['gallery_info']['carousel_settings'];
+  $default_vid_width        = 853;
+  $default_vid_height       = 480;
+  $media_feature_type       = $cb_gallery['gallery_info']['media_feature_type']; // cut down on code.
+  $is_using_viewport        = (in_array($media_feature_type, array(
+    'gallery',
+    'carousel'
+  )) ? TRUE : FALSE);
+  $is_using_thumbport       = (in_array($media_feature_type, array(
+    'thumbnails',
+    'gallery'
+  )) ? TRUE : FALSE);
+  $acceptable_image_formats = array(
+    'jpg',
+    'jpeg',
+    'png',
+    'gif'
+  );
+  $acceptable_video_formats = array(
+    'webm',
+    'mp4',
+    'ogv'
+  );
+  $pager_list_items         = ''; // Will be replaced with LI's used for paging buttons.
+  $carousel_settings        = $cb_gallery['gallery_info']['carousel_settings'];
   dsm($carousel_settings);
-  $additionalCarousel_2vars = array('start' => '1',
-                                    'axis' => 'x',
-                                    'interval' => 'false',
-                                    'rewind' => 'false',
-                                    'animation' => 'true',
-                                    'callback' => NULL
-                                    );
-  $carousel_2_settings = (is_array($carousel_settings) ? array('carousel_2' => array_merge($carousel_settings, $additionalCarousel_2vars)) : $additionalCarousel_2vars);
+  $additionalCarousel_2vars = array(
+    'start' => '1',
+    'axis' => 'x',
+    'interval' => 'false',
+    'rewind' => 'false',
+    'animation' => 'true',
+    'callback' => NULL
+  );
+  $carousel_2_settings      = (is_array($carousel_settings) ? array(
+    'carousel_2' => array_merge($carousel_settings, $additionalCarousel_2vars)
+  ) : $additionalCarousel_2vars);
   drupal_add_js($carousel_2_settings, 'setting');
   // First we check if media exists at all.
   if (isset($cb_gallery['media'])) {
-   // Then we loop through the images within the gallery.
-    $img_index = 0;
+    // Then we loop through the images within the gallery.
+    $img_index   = 0;
+    // JH - JS is working off a 1 based index.
+    $page_index  = 1;
+    $total_media = count($cb_gallery['media']);
     foreach ($cb_gallery['media'] as $media) {
-      // Register ALL vars from {cb_gallery_children}.
+      // Register ALL vars from {cb_gallery_children}. 
       extract($media, EXTR_OVERWRITE);
       
       // Flickr Photo Preprocessing.
       //if (isset($carousel_2_settings['flickr_set']) && isset($carousel_2_settings['flickr_api'])) {
       //  $carousel_slides = _getSlidesFromFlickrFeed($carousel_2_settings);
       //}
-      $media_extention = _get_file_extension($media_content);
+      //$media_extention   = _get_file_extension($media_content);
       $shadowbox_trigger = ''; // Replaced with rel="shadowbox;height...etc.."
-      $overlay = ''; // Replaced with overlay markup.
+      $overlay           = ''; // Replaced with overlay markup.
       
-      // Add the pager if the users want it.
-      if ($carousel_2_settings['carousel_2']['pager']) {
-        $pager_list_items .= '<li><a rel="' . $img_index . '" class="pagenum" href="#">' . $img_index . '</a></li>';
-      }
       // PREPROCESSING VIDEO
       if ($media_type == 'video') {
-        
         // Add video.js source.
-        drupal_add_js(drupal_get_path('module', 'cb_gallery') .'/include/video.js/video.js');
-        drupal_add_css(drupal_get_path('module', 'cb_gallery') .'/include/video.js/video.css');
+        drupal_add_js(drupal_get_path('module', 'cb_gallery') . '/js/video.js');
+        drupal_add_css(drupal_get_path('module', 'cb_gallery') . '/css/video-js.css');
         
-        $is_html5_video = (preg_match('/\.(mp4|webm|ogv)/', trim($media_content), $v) ? TRUE : FALSE);
+        $is_html5_video  = (preg_match('/\.(mp4|webm|ogv)/', trim($media_content), $v) ? TRUE : FALSE);
         $is_iframe_video = (preg_match('/^<iframe/', trim($media_content)) ? TRUE : FALSE);
         //$is_flash_video = (preg_match('/flv$/', trim($media_content)) ? TRUE : FALSE);
         
@@ -977,11 +1158,11 @@ function cb_gallery_preprocess_node(&$variables) {
             // CAROUSEL WITH VIDEO
             
             if ($is_html5_video) {
-              $player_type = 'html5';
+              $player_type            = 'html5';
               $exploded_media_content = preg_split('/\R/', $media_content);
               foreach ($exploded_media_content as $single_line) {
                 if (filter_var($single_line, FILTER_VALIDATE_URL)) {
-                  $ext =_get_file_extension($single_line);
+                  $ext = _get_file_extension($single_line);
                   if (in_array($ext, $acceptable_video_formats)) {
                     $video_src .= '<source src="' . $single_line . '" type="video/' . $ext . '" />';
                   }
@@ -990,143 +1171,167 @@ function cb_gallery_preprocess_node(&$variables) {
             }
             if ($is_iframe_video) {
               $player_type = 'iframe';
-              $embed_host = (preg_match('/(youtube|vimeo)"/i', $media_content, $e) ? $e[1] : 'unknown');
-              $vid_height = (preg_match('/height="([0-9 ] .*)"/i', $media_content, $h) ? $h[1] : $default_vid_height);
-              $vid_width = (preg_match('/width="([0-9 ] .*)"/i', $media_content, $w) ? $w[1] : $default_vid_width);
-              $vid_src = (preg_match('/src="(.*)"/i', $media_content, $s) ? $s[1] : NULL);
+              $embed_host  = (preg_match('/(youtube|vimeo)"/i', $media_content, $e) ? $e[1] : 'unknown');
+              $vid_height  = (preg_match('/height="([0-9 ] .*)"/i', $media_content, $h) ? $h[1] : $default_vid_height);
+              $vid_width   = (preg_match('/width="([0-9 ] .*)"/i', $media_content, $w) ? $w[1] : $default_vid_width);
+              $vid_src     = (preg_match('/src="(.*)"/i', $media_content, $s) ? $s[1] : NULL);
+            }
+            
+            $carousel_slides .= '<li class="item_video" rel="' . $page_index . '">
+              <div class="videoContainer">';
+            
+            if ($carousel_2_settings['carousel_2']['shadowbox'] == 1) {
+              // If so, create the rel trigger for the makrup.
+              $shadowbox_trigger = 'rel="shadowbox[carousel_' . $variables['nid'] . '];height=' . $carousel_settings['height'] . ';width=' . $carousel_settings['width'] . '" href="/' . drupal_get_path('module', 'cb_gallery') . '/include/player.php?embed_host=html5&thumbnail=' . $thumbnail_path . '&height=' . $carousel_settings['height'] . '&width=' . $carousel_settings['width'] . '&src=' . (is_array($video_formats) ? join(";", $video_formats) : $single_line) . '"';
+              $carousel_slides .= '<a ' . $shadowbox_trigger . ' onclick="return false;"><img src="' . $thumbnail_path . '"/></a>';
+            } else {
+              switch ($player_type) {
+                case 'iframe':
+                  $carousel_slides .= $media_content;
+                  break;
+                case 'html5':
+                  $carousel_slides .= '
+		                <video
+		                  id="cb_gallery_video_' . $img_index . '"
+		                  class="video-js vjs-default-skin"
+		                  controls
+		                  preload="auto"
+		                  width="' . $carousel_settings['width'] . '"
+		                  height="' . $carousel_settings['height'] . '" 
+		                  poster="' . $thumbnail_path . '"  
+		                  data-setup=\'{"example_option":true}\'
+		                  >';
+                  $carousel_slides .= $video_src;
+                  $carousel_slides .= '</video>';
+                  break;
+              }
+              
             }
             
             
-            $carousel_slides .= '<li class="item_video" rel="' . $img_index . '">';
-            $carousel_slides .= '<div class="videoContainer">';
-            switch ($player_type) {
-              case 'iframe':
-                $carousel_slides .= $media_content;
-              break;
-              case 'html5':
-               $carousel_slides .= '
-                <video
-                  id="cb_gallery_video_' . $img_index . '"
-                  class="video-js vjs-default-skin"
-                  controls
-                  preload="auto"
-                  width="' . $carousel_settings['width'] . '"
-                  height="' . $carousel_settings['height'] . '" 
-                  poster="' . $thumbnail_path . '"  
-                  data-setup=\'{"example_option":true}\'
-                  >';
-                $carousel_slides .= $video_src;
-                $carousel_slides .= '</video>';
-              break;
-            }
+            
+            
             
             $carousel_slides .= ($carousel_2_settings['carousel_2']['overlay'] ? '<div class="overlay">' . $media_caption . '</div>' : '');
             $carousel_slides .= '</div> <!-- end videoContainer -->';
             $carousel_slides .= '</li>';
-          break;
-          case 'thumbnails' :      
+            break;
+          case 'thumbnails':
             
-          // VIDEO IN SHADOWBOX. (Only used when launched from thumbnails.)
-          
-          if ($is_iframe_video) {
-            $player_type = 'iframe';
-            $embed_host = (preg_match('/(youtube|vimeo)"/i', $media_content, $e) ? $e[1] : 'unknown');
-            $vid_height = (preg_match('/height="([0-9 ] .*)"/i', $media_content, $h) ? $h[1] : $default_vid_height);
-            $vid_width = (preg_match('/width="([0-9 ] .*)"/i', $media_content, $w) ? $w[1] : $default_vid_width);
-            $vid_src = (preg_match('/src="(.*)"/i', $media_content, $s) ? $s[1] : NULL);
-            $opening_thumbnail_a_tag = '<a href="/' . drupal_get_path('module', 'cb_gallery') .'/include/player.php?embed_host=' . $embed_host . '&height=' . $vid_height . '&width=' . $vid_width . '&src=' . $src . '">';
-          }
-          if ($is_html5_video) {
-            $player_type = 'html5';
-            $exploded_media_content = preg_split('/\R/', $media_content);
-            foreach ($exploded_media_content as $single_line) {
-              if (filter_var($single_line, FILTER_VALIDATE_URL)) {
-                $ext =_get_file_extension($single_line);
-                if (in_array($ext, $acceptable_video_formats)) {
-                  $video_formats[] = $single_line;
+            // VIDEO IN SHADOWBOX. (Only used when launched from thumbnails.)
+            
+            if ($is_iframe_video) {
+              $player_type             = 'iframe';
+              $embed_host              = (preg_match('/(youtube|vimeo)"/i', $media_content, $e) ? $e[1] : 'unknown');
+              $vid_height              = (preg_match('/height="([0-9 ] .*)"/i', $media_content, $h) ? $h[1] : $default_vid_height);
+              $vid_width               = (preg_match('/width="([0-9 ] .*)"/i', $media_content, $w) ? $w[1] : $default_vid_width);
+              $vid_src                 = (preg_match('/src="(.*)"/i', $media_content, $s) ? $s[1] : NULL);
+              $opening_thumbnail_a_tag = '<a href="/' . drupal_get_path('module', 'cb_gallery') . '/include/player.php?embed_host=' . $embed_host . '&height=' . $vid_height . '&width=' . $vid_width . '&src=' . $src . '">';
+            }
+            if ($is_html5_video) {
+              $player_type            = 'html5';
+              $exploded_media_content = preg_split('/\R/', $media_content);
+              foreach ($exploded_media_content as $single_line) {
+                if (filter_var($single_line, FILTER_VALIDATE_URL)) {
+                  $ext = _get_file_extension($single_line);
+                  if (in_array($ext, $acceptable_video_formats)) {
+                    $video_formats[] = $single_line;
+                  }
                 }
               }
+              $opening_thumbnail_a_tag = '<a rel="shadowbox[' . $variables['nid'] . '];height=' . $carousel_settings['height']. ';width=' . $carousel_settings['width'] . '" href="/' . drupal_get_path('module', 'cb_gallery') .'/include/player.php?embed_host=html5&thumbnail=' . $thumbnail_path . '&height=' . $carousel_settings['height'] . '&width=' . $carousel_settings['width'] . '&src=' . (is_array($video_formats) ? join(";", $video_formats) : $single_line) . '" onclick="return false;">';
+
+              
             }
-            $opening_thumbnail_a_tag = '<a rel="shadowbox[' . $variables['nid'] . '];height=' . $carousel_settings['height']. ';width=' . $carousel_settings['width'] . '" href="/' . drupal_get_path('module', 'cb_gallery') .'/include/player.php?embed_host=html5&thumbnail=' . $thumbnail_path . '&height=' . $carousel_settings['height'] . '&width=' . $carousel_settings['width'] . '&src=' . (is_array($video_formats) ? join(";", $video_formats) : $single_line) . '" onclick="return false;">';
-          }
-          break;
+            break;
         }
       }
       // PREPROCESS IMAGE
       if ($media_type == 'image') {
-        
-      // Pull actual image dimentions using this function...?
-      list($img_actual_width, $img_actual_height) = getimagesize($media_content);
+        // Pull actual image dimensions using this function...? Damn skippy.
         switch ($media_feature_type) {
-          case 'carousel_2' :
+          case 'carousel_2':
           case 'gallery':
             // CAROUSEL WITH IMAGE
+            $media_extention   = _get_file_extension($thumbnail_path);
             if (!in_array($media_extention, $acceptable_image_formats)) {
               drupal_set_message('Image format is unsupported.', 'error');
             }
-            // Is this using Shadowbox?
-            if ($carousel_2_settings['carousel_2']['shadowbox'] == 1) {
-              // If so, create the rel trigger for the makrup.
-              $shadowbox_trigger = ' rel="shadowbox[carousel_' . $variables['nid'] . '];height=' . $img_actual_height . ';width=' . $img_actual_width . ';"';
-            }
+            
             // Is this using an Overlay?
             if ($carousel_2_settings['carousel_2']['overlay'] == 1) {
               // If so, build the overlay for the markup.
               $overlay = '<div class="overlay">' . $media_caption . '</div>';
             }
+            
+            if($media_content != ''){
+        	    list($img_actual_width, $img_actual_height) = getimagesize($media_content);
+	            // Is this using Shadowbox?
+	            if ($carousel_2_settings['carousel_2']['shadowbox'] == 1) {
+	              // If so, create the rel trigger for the makrup.
+	              $shadowbox_trigger = ' rel="shadowbox[carousel_' . $variables['nid'] . '];height=' . $img_actual_height . ';width=' . $img_actual_width . ';"';
+	            }
+	            $carousel_slides_content = '<a href="' . $media_content . '"' . $shadowbox_trigger . '>' . $overlay . '<img  src="' . $thumbnail_path . '" /></a>';
+            } else {
+            	$carousel_slides_content = '<img  src="' . $thumbnail_path . '" />';
+            }
+
             // Begin the build of the LI elements that will make up the carousel.
-            $carousel_slides .= '<li class="item_image" rel="' . $img_index . '">';
-            $carousel_slides .= '<a href="' . $media_content . '"' . $shadowbox_trigger . '>';// TODO: carousel images can link to pages.
-            $carousel_slides .= $overlay;
-            $carousel_slides .= '<img  src="' . $media_content . '" />';
-            $carousel_slides .= '</a>';
-            $carousel_slides .= '</li>';
-          break;
-          case 'thumbnails' :
-          // IMAGE IN THUMBNAILS
-            $opening_thumbnail_a_tag = '<a href="' . $media_content . '" rel="shadowbox[' . $variables['nid'] . '];" title="' . $media_caption . '" onclick="return false;">';
-          break;
-          case 'gallery':
-            // IMAGE IN CB_GALLERY
-            $opening_thumbnail_a_tag = '<a href="' . $media_content . '" class="viewport_trigger" rel="' . $img_index . '" title="' . $media_caption . '" onclick="return false;">';
-          break;
+            $carousel_slides .= '<li class="item_image" rel="' . $page_index . '">'
+              . $carousel_slides_content .
+            '</li>';
+              
+            break;
+          case 'thumbnails':
+          	$opening_thumbnail_a_tag = '<a href="' . $media_content . '" rel="shadowbox[' . $variables['nid'] . '];" title="' . $media_caption . '" onclick="return false;">';
         }
       }
-      // PREPROCESS THUMBNAIL IMAGE
-      // Add the thumbnail image to the thumbport.
-      $thumbport_content .= '<li>';
-      $thumbport_content .= '<p style="height:' . $cb_gallery['gallery_info']['thumbnail_height'] . 'px;">';
-      $thumbport_content .= $opening_thumbnail_a_tag;
-      $thumbport_content .= '<img src="' . $thumbnail_path . '" style="width:' . $cb_gallery['gallery_info']['thumbnail_width'] . 'px;"/>';
-      $thumbport_content .= '</a>';
-      $thumbport_content .= '</p>';
-      $thumbport_content .= '</li>';
-      $img_index++;
+      
+      if($media_feature_type == 'thumbnails'){
+        list($img_actual_width, $img_actual_height) = getimagesize($media_content);
+        $shadowbox_trigger = ' rel="shadowbox[carousel_' . $variables['nid'] . '];height=' . $img_actual_height . ';width=' . $img_actual_width . ';"';
+        $thumbport_content_image = '<img src="' . $thumbnail_path . '" style="width:' . $cb_gallery['gallery_info']['thumbnail_width'] . 'px;"/>';
+        $thumbport_content .= '<li style="height:' . $cb_gallery['gallery_info']['thumbnail_height'] . 'px;">'.
+	        $opening_thumbnail_a_tag . '' . $thumbport_content_image . '</a>
+	      </li>';
+      } else {
+	      $thumbport_content_image .= '<img src="' . $thumbnail_path . '" style="width:' . $cb_gallery['gallery_info']['thumbnail_width'] . 'px;"/>'; 
+	      if (($img_index + 1) % $carousel_2_settings['carousel_2']['display'] == 0) {
+	        if ($carousel_2_settings['carousel_2']['move_amount'] != '1') {
+	          $thumbport_content .= '<li style="height:' . $cb_gallery['gallery_info']['thumbnail_height'] . 'px;">
+		            <a href="#" rel="' . $page_index . '" title="' . $media_caption . '" class="pagenum"><span>' . $page_index . '</span>' . $thumbport_content_image . '</a>
+		          </li>';
+	          //var_dump($thumbport_content);
+	          
+	        }
+	        $thumbport_content_image = '';
+	        $page_index++;
+	      }
+	      $img_index++;
+      }
     }
   }
-
+  
   // Pass variables to the node template file.
-  $viewport  = '<div id="carousel">';
+  $thumbport = '<div class="thumbport pager"><ul class="' . ($pager_list_items ? 'pager' : '') . '">';
+  $thumbport .= $thumbport_content;
+  $thumbport .= '</ul></div>';
+  
+  $viewport = '<div id="carousel">';
   $viewport .= ($carousel_2_settings['carousel_2']['controls'] ? '<a class="buttons prev" href="#"></a>' : '');
-  $viewport .= '<div class="viewport">';
+  $viewport .= '<div class="viewport" style="height:' . $carousel_2_settings['carousel_2']['height'] . 'px">';
   $viewport .= '<ul class="overview">';
   $viewport .= $carousel_slides;
   $viewport .= '</ul><!-- end carousel -->';
   
-  $viewport .= '<ul class="pager">';
-  $viewport .= $pager_list_items;
-  $viewport .= '</ul><!-- end pager -->';
-  $viewport .= '</div><!-- end overview -->';
-  $viewport .= ($carousel_2_settings['carousel_2']['controls'] ? '<a class="buttons next" href="#"></a>' : '');
   $viewport .= '</div><!-- end viewport -->';
-
-  $thumbport = '<div class="thumbport"><ul>';
-  $thumbport .= $thumbport_content;
-  $thumbport .= '</ul></div>';
-
-  $variables['cb_gallery'] = $cb_gallery;
-  $variables['cb_gallery']['viewport'] = (isset($carousel_slides) ? $viewport : NULL);
-  $variables['cb_gallery']['thumbport'] = (isset($thumbport_content) ? $thumbport : NULL);
+  $viewport .= ($carousel_2_settings['carousel_2']['controls'] ? '<a class="buttons next" href="#"></a>' : '');
+  $viewport .= ($carousel_2_settings['carousel_2']['pager'] ? $thumbport : '');
+  $viewport .= '</div><!-- end carousel -->';
+  
+  $variables['cb_gallery']              = $cb_gallery;
+  $variables['cb_gallery']['viewport']  = (isset($carousel_slides) ? $viewport : NULL);
+  $variables['cb_gallery']['thumbport'] = ((isset($thumbport_content)) ? $thumbport : NULL);
 }
 
 
@@ -1141,7 +1346,7 @@ function cb_gallery_preprocess_node(&$variables) {
  * Credit: Thanks to Josh Hoegen.
  */
 function _cb_gallery_block_list() {
-  $sql = db_query("SELECT nid FROM {cb_gallery_parents};");
+  $sql   = db_query("SELECT nid FROM {cb_gallery_parents};");
   $items = array();
   while ($data = db_fetch_object($sql)) {
     $items[] = node_load($data->nid);
@@ -1159,15 +1364,14 @@ function cb_gallery_block($op = 'list', $delta = 0, $edit = array()) {
   if ($op == 'list' && $cb_gallerys = _cb_gallery_block_list()) {
     foreach ($cb_gallerys as $key => $cbNode) {
       $block[$key]['info'] = t('CB_Gallery:' . $cbNode->title);
-      $deltas[$key] = $cbNode->nid;
+      $deltas[$key]        = $cbNode->nid;
     }
     variable_set('cb_gallery', $deltas, array());
-  }
-  elseif ($op == 'view' && $deltas = variable_get('cb_gallery', array())) {
+  } elseif ($op == 'view' && $deltas = variable_get('cb_gallery', array())) {
     drupal_add_css(drupal_get_path('module', 'cb_gallery') . '/css/cb_gallery.css');
     foreach ($deltas as $key => $nid) {
       if ($key == $delta) {
-        $cb_gallery_node = node_load($nid);
+        $cb_gallery_node             = node_load($nid);
         $cb_gallery_node->cb_gallery = _get_cb_gallery_info($nid, NULL);
         if ($cb_gallery_node->status == 1) {
           $block['subject'] = t('!title', array(
@@ -1205,7 +1409,7 @@ function cb_gallery_node_info() {
     'cb_gallery' => array(
       'name' => t('CB Gallery'),
       'module' => 'cb_gallery',
-      'description' => "Create gallerys for remote images and embeded video.",
+      'description' => "Create gallerys for remote images and embeded video."
     )
   );
 }
@@ -1213,7 +1417,10 @@ function cb_gallery_node_info() {
  * Implements hook_node_perm().
  */
 function cb_gallery_perm() {
-  return array('create cb_gallery node', 'edit own cb_gallery');
+  return array(
+    'create cb_gallery node',
+    'edit own cb_gallery'
+  );
 }
 /**
  * Implements hook_help().

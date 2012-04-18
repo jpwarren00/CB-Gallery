@@ -1,7 +1,6 @@
 
 #carousel {
-    height: 330px;
-    border:1px solid #ccc;
+    
 }
 
 #carousel .viewport {
@@ -10,7 +9,7 @@
     position: relative;
     border-bottom: none;
     border-top: none;
-    margin: 0;
+    margin: 0 0 1px 0;
     padding: 0;
     height: 100%;
     width:100%
@@ -113,6 +112,7 @@
 
 #carousel .overlay {
     position: absolute;
+	width: 100%;
     bottom: 0px;
     left: 0px;
     cursor: pointer;
