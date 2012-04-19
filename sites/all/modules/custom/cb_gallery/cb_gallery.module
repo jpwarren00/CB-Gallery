@@ -883,7 +883,7 @@ function cb_gallery_preprocess_node(&$variables) {
   $default_vid_width = 853;
   $default_vid_height =  480;
   $media_feature_type = $cb_gallery['gallery_info']['media_feature_type']; // cut down on code.
-  $is_using_viewport = (in_array($media_feature_type, array('gallery', 'carousel')) ? TRUE : FALSE);
+  $is_using_viewport = ($media_feature_type == 'gallery' ? TRUE : FALSE);
   $is_using_thumbport = (in_array($media_feature_type, array('thumbnails', 'gallery')) ? TRUE : FALSE);
   $acceptable_image_formats = array('jpg', 'jpeg', 'png', 'gif');
   $acceptable_video_formats = array('webm', 'mp4', 'ogv');
@@ -906,10 +906,12 @@ function cb_gallery_preprocess_node(&$variables) {
     // JH - JS is working off a 1 based index.
     $page_index = 1;
     $total_media = count($cb_gallery['media']);
+    $thumbport_content = '';
+    
     foreach ($cb_gallery['media'] as $media) {
       // Register ALL vars from {cb_gallery_children}.
       extract($media, EXTR_OVERWRITE);
-
+      
       // Flickr Photo Preprocessing.
       //if (isset($carousel_2_settings['flickr_set']) && isset($carousel_2_settings['flickr_api'])) {
       //  $carousel_slides = _getSlidesFromFlickrFeed($carousel_2_settings);
@@ -917,13 +919,13 @@ function cb_gallery_preprocess_node(&$variables) {
       $media_extention = _get_file_extension($media_content);
       $shadowbox_trigger = ''; // Replaced with rel="shadowbox;height...etc.."
       $overlay = ''; // Replaced with overlay markup.
-
+      $thumb_number_goes_here = (($img_index + 1) % $carousel_2_settings['carousel_2']['display'] == 0 ? FALSE : TRUE);
       // PREPROCESSING VIDEO
       if ($media_type == 'video') {
         
         // Add video.js source.
-        drupal_add_js(drupal_get_path('module', 'cb_gallery') .'/include/video.js/video.js');
-        drupal_add_css(drupal_get_path('module', 'cb_gallery') .'/include/video.js/video.css');
+        drupal_add_js(drupal_get_path('module', 'cb_gallery') .'/js/video.js');
+        drupal_add_css(drupal_get_path('module', 'cb_gallery') .'/css/video-js.css');
         
         $is_html5_video = (preg_match('/\.(mp4|webm|ogv)/', trim($media_content), $v) ? TRUE : FALSE);
         $is_iframe_video = (preg_match('/^<iframe/', trim($media_content)) ? TRUE : FALSE);
@@ -933,7 +935,6 @@ function cb_gallery_preprocess_node(&$variables) {
         // lets display the markup that will give the carousel_2 the elements
         // that it needs to load it's video player.
         switch ($media_feature_type) {
-          case 'carousel_2':
           case 'gallery':
             
             // CAROUSEL WITH VIDEO
@@ -972,8 +973,8 @@ function cb_gallery_preprocess_node(&$variables) {
                   class="video-js vjs-default-skin"
                   controls
                   preload="auto"
-                  width="' . $carousel_settings['width'] . '"
-                  height="' . $carousel_settings['height'] . '" 
+                  width="' . ($carousel_settings['display'] >= 2 ? ($carousel_settings['width'] / $carousel_settings['display'] ) : $carousel_settings['width']) . '"
+                  height="' . ($carousel_settings['display'] >= 2 ? ($carousel_settings['height'] / $carousel_settings['display'] ) : $carousel_settings['height']) . '" 
                   poster="' . $thumbnail_path . '"  
                   data-setup=\'{"example_option":true}\'
                   >';
@@ -985,6 +986,19 @@ function cb_gallery_preprocess_node(&$variables) {
             $carousel_slides .= ($carousel_2_settings['carousel_2']['overlay'] ? '<div class="overlay">' . $media_caption . '</div>' : '');
             $carousel_slides .= '</div> <!-- end videoContainer -->';
             $carousel_slides .= '</li>';
+            if($thumb_number_goes_here){
+              $thumbnail_img_and_link = '<a href="#" rel="'. $page_index .'" title="' . $media_caption . '" class="pagenum">
+                                        <span>'.$page_index.'</span>
+                                          <img src="' . $thumbnail_path . '" style="width:' . $cb_gallery['gallery_info']['thumbnail_width'] . 'px;"/>
+                                        </a>';
+              $page_index++;
+            }else{
+            $thumbport_content .= '<li style="height:' . $cb_gallery['gallery_info']['thumbnail_height'] . 'px;">
+                                    <a href="' . $media_content . '" rel="shadowbox[' . $variables['nid'] . '];" title="' . $media_caption . '" onclick="return false;">
+                                      <img src="' . $thumbnail_path . '" style="width:' . $cb_gallery['gallery_info']['thumbnail_width'] . 'px;"/>
+                                    </a>
+                                  </li>';
+            }
           break;
           case 'thumbnails' :      
             
@@ -1014,15 +1028,15 @@ function cb_gallery_preprocess_node(&$variables) {
           break;
         }
       }
-      // PREPROCESS IMAGE
       if ($media_type == 'image') {
         
-      // Pull actual image dimentions using this function...?
-      list($img_actual_width, $img_actual_height) = getimagesize($media_content);
+        // Pull actual image dimentions using this function...?
+        list($img_actual_width, $img_actual_height) = getimagesize($media_content);
         switch ($media_feature_type) {
-          case 'carousel_2' :
           case 'gallery':
+            
             // CAROUSEL WITH IMAGE
+            
             if (!in_array($media_extention, $acceptable_image_formats)) {
               drupal_set_message('Image format is unsupported.', 'error');
             }
@@ -1044,43 +1058,37 @@ function cb_gallery_preprocess_node(&$variables) {
             $carousel_slides .= '</a>';
             $carousel_slides .= '</li>';
             
-            //print_r($carousel_2_settings['carousel_2']);
             
-            $thumbport_content_ .= '<img src="' . $thumbnail_path . '" style="width:' . $cb_gallery['gallery_info']['thumbnail_width'] . 'px;"/>';
-                        
-            if (($img_index + 1) % $carousel_2_settings['carousel_2']['display'] == 0) {
-	          if($carousel_2_settings['carousel_2']['move_amount'] != '1'){
-	              $thumbport_content .= '<li style="height:' . $cb_gallery['gallery_info']['thumbnail_height'] . 'px;">
-	                <a href="#" rel="'. $page_index .'" title="' . $media_caption . '" class="pagenum"><span>'.$page_index.'</span>'.$thumbport_content_.'</a>
-	              </li>';
-	          }
-	          $thumbport_content_ = '';
-		      $page_index++;
-	        }
+                       
+          if ($thumb_number_goes_here) {
+            if($carousel_2_settings['carousel_2']['move_amount'] != '1') {
+                $thumbnail_img_and_link = '<a href="#" rel="'. $page_index .'" title="' . $media_caption . '" class="pagenum">
+                                        <span>'.$page_index.'</span>
+                                          <img src="' . $thumbnail_path . '" style="width:' . $cb_gallery['gallery_info']['thumbnail_width'] . 'px;"/>
+                                        </a>';
+            $page_index++;
+            }
+            
+	        } else { // No ThumbNumber in this one.
+              $thumbnail_img_and_link = '
+                                <a href="' . $media_content . '" rel="shadowbox[' . $variables['nid'] . '];" title="' . $media_caption . '" onclick="return false;">
+                                  <img src="' . $thumbnail_path . '" style="width:' . $cb_gallery['gallery_info']['thumbnail_width'] . 'px;"/>
+                                </a>';
+          }
           break;
           case 'thumbnails' :
             // IMAGE IN THUMBNAILS
-            $thumbport_content .= '<li style="height:' . $cb_gallery['gallery_info']['thumbnail_height'] . 'px;">
-              <a href="' . $media_content . '" rel="shadowbox[' . $variables['nid'] . '];" title="' . $media_caption . '" onclick="return false;">
-                <img src="' . $thumbnail_path . '" style="width:' . $cb_gallery['gallery_info']['thumbnail_width'] . 'px;"/>
-              </a>
-	        </li>';
+            $thumbnail_img_and_link = '<a href="' . $media_content . '" rel="shadowbox[' . $variables['nid'] . '];" title="' . $media_caption . '" onclick="return false;">
+                                        <img src="' . $thumbnail_path . '" style="width:' . $cb_gallery['gallery_info']['thumbnail_width'] . 'px;"/>
+                                      </a>';
           break;
-          case 'gallery':
-            // IMAGE IN CB_GALLERY
-		    $thumbport_content .= '<li style="height:' . $cb_gallery['gallery_info']['thumbnail_height'] . 'px;">
-              <a href="' . $media_content . '" rel="shadowbox[' . $variables['nid'] . '];" title="' . $media_caption . '" onclick="return false;">
-                <img src="' . $thumbnail_path . '" style="width:' . $cb_gallery['gallery_info']['thumbnail_width'] . 'px;"/>
-              </a>
-	        </li>';         
-	      break;
         }
       }
+      $thumbport_content .= '<li style="height:' . $cb_gallery['gallery_info']['thumbnail_height'] . 'px;">' . $thumbnail_img_and_link . '</li>';
       $img_index++;
-     
     }
   }
-
+  // dsm($carousel_2_settings['carousel_2']['height']);
   // Pass variables to the node template file.
   $thumbport = '<div class="thumbport pager"><ul class="' . ($pager_list_items ? 'pager' : '' ) . '">';
   $thumbport .= $thumbport_content;
@@ -1100,7 +1108,7 @@ function cb_gallery_preprocess_node(&$variables) {
 
   $variables['cb_gallery'] = $cb_gallery;
   $variables['cb_gallery']['viewport'] = (isset($carousel_slides) ? $viewport : NULL);
-  $variables['cb_gallery']['thumbport'] = ((isset($thumbport_content) && $media_feature_type == 'thumbnails') ? $thumbport : NULL);
+  $variables['cb_gallery']['thumbport'] = ((isset($thumbport_content) ) ? $thumbport : NULL);
 }
 
 

@@ -215,6 +215,12 @@ h3.gallery_title{
 
 
 /*LIVE STYLES*/
+
+div.boosh .viewport{
+				height: 225px;
+				border: 1px solid red;
+}
+
 /*These are meant to be overridden*/
 div.cb_gallery_node .viewport{
 
