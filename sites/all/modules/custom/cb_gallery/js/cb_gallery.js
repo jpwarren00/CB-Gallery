@@ -1,348 +1,176 @@
-/**
- * CB Gallery Main Javascript
- * What this file does:
- * 1-Impliments the jQuery UI Sortable method.
- * 2-Manage Custom Show/Hides
- * TODO: turn these: $() into these: var element
- */
-$(function () { // On Document Ready
-  $('#ajax_loading').ajaxStart(function () {
-   $(this).css('line-height', $('#my_cb_gallery').height() + 'px');
-    $(this).fadeIn('fast');
-  });
-  $('#ajax_loading').ajaxStop(function () {
-    $(this).fadeOut('fast');
-  });
+$(document).ready(function(){
+	//console.log(Drupal.settings.carousel_2);
+	/*//Drupal.settings.carousel_2 created in:
+	 * ../carousel.module: <?php $carousel_js_settings = array('carousel_2' => array(
+		 'start' => '1',
+		 'display' => $carousel->display,
+		 'height' => $carousel->height,
+		 'width' => $carousel->width,
+		 'axis' => 'x',
+		 'controls' => $carousel->controls,
+		 'pager' => $carousel->pager,
+		 'interval' => 'false',
+		 'interval_time' => $carousel->interval_time,
+		 'rewind' => 'false',
+		 'animation' => 'true',
+		 'duration' => $carousel->duration,
+		 'callback' => null,
+		 'overlay' => $carousel->overlay,
+		 'overlay_toggle' => $carousel->overlay_toggle,
+		 'overlay_height' => $carousel->overlay_height,
+		 'overlay_y' => $carousel->overlay_y ?>
+	));*/
+	var carousel = $('#carousel');
+	var viewport = $('#carousel .viewport');
+	var slide = $('#carousel .overview li');
+	var buttons = $('#carousel .buttons');
+	var pager_list = $('#carousel .pager');
+	var overview = $('#carousel .overview');
+	var overview_item = $('#carousel .overview li, #carousel .overlay');
+	var carousel_images = $('#carousel .overview li img');
+	var overlay = $('#carousel .overlay');
+	
+	var height = parseInt(Drupal.settings.carousel_2.height);
+	var width =  parseInt(Drupal.settings.carousel_2.width);
 
-  $('.viewport_trigger').click(function () {
-
-    //$(this).parents('.thumbport').siblings('.nivoGallery').data('nivoGallery').goTo(Number($(this).attr('rel')));
-  });
-  // Event binding must be reapplied when new gellery items are created.
-  // This function will register all gallery_reorder_gui events.
-  resetEventBindings();
-
-  /**
-   * Live Gallery Layout Preview
-   */
-
-  function refreshLivePreview(media_feature_type, thumbnail_aspect_ratio) {
-    // Set default viewport values incase arguments are missing. (which happens onload).
-    if (media_feature_type == undefined && thumbnail_aspect_ratio == undefined) {
-      media_feature_type = $('input[name="media_feature_type"]:checked').val(), thumbnail_aspect_ratio = $('input[name="thumbnail_settings[thumbnail_aspect_ratio]"]:checked').val();
-    }
-
-     var  $livepreview =$('#live_preview'),
-          $carousel_settings_fieldset = $('.carousel_2_settings_fieldset'),
-          $all_thumbnails_in_gui = $('div.dragable p.img_wrapper');
-          
-    $('#edit-thumbnail-settings-thumbnail-height-wrapper').hide();
-    switch (thumbnail_aspect_ratio) {
-    case "4:3":
-      $livepreview.addClass('fourByThree').removeClass('sixteenByNine').removeClass('oneToOne');
-      $all_thumbnails_in_gui.css('width','80px');
-      break;
-    case "custom_height":
-      $('#edit-thumbnail-settings-thumbnail-height-wrapper').show();
-      break;
-    case "auto":
-    case "16:9":
-      $livepreview.addClass('sixteenByNine').removeClass('fourByThree').removeClass('oneToOne');
-      $all_thumbnails_in_gui.css('width','107px');
-      break;
-    case "1:1":
-      $livepreview.addClass('oneToOne').removeClass('sixteenByNine').removeClass('fourByThree');
-      $all_thumbnails_in_gui.css('width','60px');
-      break;
-    }
-    switch (media_feature_type) {
-    case "thumbnails":
-      $livepreview.addClass('noViewport').removeClass('viewport') //hide viewport
-      .addClass('showThumbport') //show thumbport
-      .removeClass('noThumbport');
-      $carousel_settings_fieldset.slideUp(function () {
-        $('.thumbnail_settings_fieldset').slideDown();
-      });
-      break;
-    case "gallery":
-      $livepreview.addClass('viewport') //show viewport
-      .removeClass('noViewport').addClass('showThumbport') //show thumbport
-      .removeClass('noThumbport');
-      $('.thumbnail_settings_fieldset').slideDown();
-      $carousel_settings_fieldset.slideDown();
-      break;
-    case "carousel_2":
-      $livepreview.addClass('viewport') //show viewport
-      .removeClass('noViewport').removeClass('showThumbport').addClass('noThumbport'); //hide thumbport
-      $('.thumbnail_settings_fieldset').slideUp(function () {
-        $carousel_settings_fieldset.slideDown();
-      });
-
-      $('.thumbnail_settings_fieldset').slideUp(function () {
-        $carousel_settings_fieldset.slideDown();
-      });
-      break;
-    }
-  }
-  // Helper functions
-  function resetEditFormFields() {
-    $('.being_cloned').removeClass('being_cloned');
-    $('.being_edited').removeClass('being_edited');
-    $('.image_fieldset').slideUp('slow'); // hide fieldsets
-    $('.video_fieldset').slideUp('slow'); // hide fieldsets
-    // Clear all elements within this form.
-    $('#node-form .input_image_name, #node-form .input_image_caption, #node-form .input_thumbnail_path, #edit-edit-media-id').val('');
-    $('input[name="media_type"]').attr('checked', false);
-    // Button Control
-    $('.submit_edit_media_button').hide(); // Show the SUBMIT EDITS button.
-    $('.cancel_edit_media_button').hide(); // Show the Cancel EDITS button.
-  }
-
-  //Happy Scroll :D
-  function happyScroll(id) {
-    $('html,body').animate({
-      scrollTop: $(id).offset().top
-    }, 'slow');
-  }
-  
-  // Helper Functions
-  function populateForm(data) {
-    $('.input_image_name').val(data.media_name); // set the name
-    $('.input_image_caption').val(data.media_caption); // set the caption
-    $('.input_thumbnail_path').val(data.thumbnail_path); // set the thumbnail
-    $('input[name="media_type"]').attr('checked', false); // set all radio buttons to false.
-    $('.cancel_edit_media_button').show(); // Show the Cancel EDITS button.
-    switch (data.media_type) {
-    case "video":
-      $('input[name="media_type"][value="video"]').attr('checked', true);
-      $('.input_video_embed_code').val(data.media_content);
-      $('.video_fieldset').slideDown('slow'); // show fieldset
-      break;
-    case "image":
-      $('input[name="media_type"][value="image"]').attr('checked', true);
-      $('.input_remote_image').val(data.media_content);
-      $('.image_fieldset').slideDown('slow'); // show fieldset
-      break;
-    }
-  }
-
-  // Helper functions
-  function set_cb_status(data, parents_or_children) {
-
-    $('#cb_gallery_sort_status').slideUp('slow', function () { // Hide the Status
-      $(this).empty() // Clear the Status
-      .addClass(data.message_class) // Style the Status
-      .html(data.message) // Write the Status
-      .slideDown() // Show the Status
-    });
-  }
-  
-  function front_end_validation(){
-    var input_display = $('#edit-carousel-settings-display');
-    var input_pager = $('#edit-carousel-settings-pager');
-	var input_move_amount = $('#edit-carousel-settings-move-amount');
-    var images = $('#my_cb_gallery .dragable');
-	// disable single slide if display count = 1. See jquery.tinycarousel.js
-	if(input_display.val() == '1'){
-		input_move_amount.val('0').attr('disabled', 'disabled').attr('checked', '');
-	} else {
-		input_move_amount.attr('disabled', false);
+	var display = parseInt(Drupal.settings.carousel_2.display);
+	var pager = parseInt(Drupal.settings.carousel_2.pager);
+	var controls = parseInt(Drupal.settings.carousel_2.controls);
+	var interval_time = parseInt(Drupal.settings.carousel_2.interval_time);
+	var duration = parseInt(Drupal.settings.carousel_2.duration);
+	var singleSlide = (display == 1 ? 0 : parseInt(Drupal.settings.carousel_2.move_amount));
+	
+	var carousel_height = height;
+	var carousel_width = width;
+	var carousel_outer_width = $('#carousel .viewport').outerWidth();
+	var image_width = Math.round($('#carousel .viewport').outerWidth()/display);
+			
+	var overlay_height = parseInt(Drupal.settings.carousel_2.overlay_height);
+	var overlay_y = parseInt(Drupal.settings.carousel_2.overlay_y);
+	var overlay_toggle = parseInt(Drupal.settings.carousel_2.overlay_toggle);
+	var overlay_in;
+	var overlay_out;
+	var vid_focus = false;
+	var imgCount = $('#carousel .overview').children().length;
+	var remainder = imgCount % display;
+	var subtractMarginPx;
+	// Dev controlled in sites main script page
+	//buttons.hide();
+	
+	//console.log(duration+' - '+interval_time);
+	
+	if(display >= 2){
+		//height = height / display;
+		width = width / display;
+		subtractMarginPx = 4;
+		$('.item_image, .item_video').css('margin-right','4px');
 	}
-	// if total amount of images not divisible by display
-	if(images.length % input_display.val() != 0){
-		// console.log(images.length % display.val());
-		input_move_amount.val('1').attr('disabled', 'disabled').attr('checked', 'checked');
-		input_pager.val('0').attr('disabled', 'disabled').attr('checked', '');
-	} else {
-		input_move_amount.val('0').attr('disabled', false).attr('checked', '');
-		input_pager.attr('disabled', false);
+	
+	// If the overlay is a string, that means it has a "!" infront of it
+	// per the instructions... Of they perhaps did not follow the
+	// instructions, and instead, put "100px" or some other such foolishness
+	// this will also ring true, and give the user an unexpected result...
+	if(typeof(overlay_y)=='string') {
+		overlay.css({
+			height: (overlay_height)+'px',
+			bottom: (overlay_y.slice(1))+'px'
+		});
+	}else{
+		overlay.css({
+			height: (overlay_height)+'px',
+			top: (overlay_y)+'px'
+		});
 	}
-  }
-
-
-  /**
-   * Update CB_CHILDREN table with new data.
-   */
-  $('.submit_new_media, .submit_edit_media_button').click(function () {
-
-    var op = ($(this).hasClass('submit_edit_media_button') ? 'update' : 'insert');
-    var data_to_post = {};
-    var gallery_nid = $('.gallery_nid').val();
-
-    $('.send_to_cb_children').each(function () {
-      var name = $(this).attr('name');
-      var val = $(this).val();
-      if (name != undefined) {
-        if ($(this).is(':checkbox, :radio')) {
-          val = $('input[name=' + $(this).attr('name') + ']:checked').val();
-        }
-        data_to_post[name] = val;
-      }
-    });
-    $.ajax({
-      type: "POST",
-      url: '/admin/cb_gallery_ajax/media_processing/' + gallery_nid,
-      dataType: 'json',
-      data: data_to_post,
-      success: function (data) {
-        if (data[0].return_media != undefined) {
-          switch (op) {
-          case 'update':
-            $('#my_cb_gallery .being_edited').after(data[0].return_media); // add the returned element to the DOM.
-            $('#my_cb_gallery .being_edited').fadeOut('slow', function () {
-              $('#my_cb_gallery .new_cb_addition').fadeIn('slow', function () {
-                $(this).removeClass('new_cb_addition'); // remove "new_addition" flag
-                $('.being_edited').removeClass('being_edited'); //remove all editing styles
-              });
-            });
-            break;
-          case 'insert':
-            $('#my_cb_gallery').prepend(data[0].return_media); // add the returned element to the DOM.
-            $('#my_cb_gallery .new_cb_addition').fadeIn('slow', function () {
-              $(this).removeClass('new_cb_addition');
-            });
-            break;
-          }
-          $('#my_cb_gallery .empty').fadeOut('slow', function () {
-            $(this).remove();
-          }); // remove empty placeholder if it exists
-          resetEditFormFields(); // Clear out the form
-          resetEventBindings(); // Reset the jquery event bindings to include the newly added DOM element.
-          refreshLivePreview(); // Make sure that thumbnails are set correctly.
-        }
-      }
-    });
-  });
-
-  /**
-   * @function
-   * resetEventBindings
-   * Args: NONE
-   * Return: NULL
-   * Description:
-   * When a new gallery item is created, it's menu is unbound.
-   * This function will register the click events of the new item
-   * with the DOM.
-   */
-  function resetEventBindings() {
-    //Implimentation of jQuery Sortable()
-    if ($('#my_cb_gallery > div').length > 1) { // Only allow sort if there is MORE than one media element in the gallery.
-      $('#my_cb_gallery').sortable({
-        axis: 'y',
-        containment: 'parent',
-        stop: function (event, ui) {
-          var hookMenuSafeArgs = $('#my_cb_gallery').attr('rel') + '-' + $('#my_cb_gallery').sortable('serialize');
-          hookMenuSafeArgs = hookMenuSafeArgs.replace(/&/g, "-"); // kill '&'. It would confuse hook_menu()
-          hookMenuSafeArgs = hookMenuSafeArgs.replace(/img\[\]=/g, ""); // kill 'img[]='. It makes the PHP parseing easier. The Gallery ID is the first number in the array.
-          $.getJSON('/admin/cb_gallery_ajax/change_sort_order/' + hookMenuSafeArgs, {}, function (data) {
-            set_cb_status(data);
-          });
-        }
-      });
-    } else {
-      //$('#my_cb_gallery').sortable('disable');
-    }
-
-    // Bind Thumbnail Aspect Ratio
-    $('input[name="thumbnail_settings[thumbnail_aspect_ratio]"]').click(function () {
-      var thumbnail_aspect_ratio = $(this).val(),
-        media_feature_type = $('input[name="media_feature_type"]:checked').val();
-
-      refreshLivePreview(media_feature_type, thumbnail_aspect_ratio);
-    });
-
-    // Bind Viewport Toggle
-    $('input[name="media_feature_type"]').click(function () {
-      var thumbnail_aspect_ratio = $('input[name="thumbnail_aspect_ratio"]:checked').val(),
-        media_feature_type = $(this).val();
-      refreshLivePreview(media_feature_type, thumbnail_aspect_ratio);
-
-    });
-
-    // Cancel Button Bindongs
-    $('.cancel_edit_media_button').click(function () {
-      $('.being_edited').removeClass('being_edited');
-      $('.being_cloned').removeClass('being_cloned');
-      $('.add_to_gallery_button').show(); // Show the ADD TO GALLERY button.
-      $(this).hide(); // Show the ADD TO GALLERY button.
-      resetEditFormFields(); // clear the form and reset for Add
-    });
-    // Edit Binding.
-    $('.media_edit').click(function (obj) {
-      var media_id = $(this).parents('.dragable').attr('id').replace('img_', '');
-      $('.being_edited').removeClass('being_edited'); // clear all 'being_edited' classes.
-      $('#edit-edit-media-id').val(media_id); // This tells PHP that we are EDITING, and not just submitting.
-      $(this).parents('.dragable').addClass('being_edited'); // add class to the gallery element being edited.
-      $.getJSON($(this).attr('href'), {}, function (data) {
-        $('.image_fieldset').slideUp('slow'); // hide fieldsets
-        $('.video_fieldset').slideUp('slow'); // hide fieldsets
-        $('#edit-add-media-button').hide(); // Hide the ADD TO GALLERY button.
-        $('.submit_edit_media_button').show(); // Show the SUBMIT EDITS button.
-        $('.cancel_edit_media_button').show(); // Show the Cancel EDITS button.
-        populateForm(data);
-        happyScroll('#NewMediaFormTop');
-        $('.new_media_fieldset').removeClass('collapsed').addClass('being_edited');
-        $('> div:not(.action)', $('.new_media_fieldset')).slideDown();
-        $('.input_image_name').focus();
-        $('.submit_new_media').hide();
-      });
-    });
-
-    // Clone Binding
-    $('.media_clone').click(function (obj) {
-      $('.being_cloned').removeClass('being_cloned'); // clear all 'being_edited' classes.
-      $(this).parents('.dragable').addClass('being_cloned'); // add class to the gallery element being cloned.
-      $('.submit_new_media').show(); // Show the SUBMIT EDITS button.
-      var media_id = $(this).parents('.dragable').attr('id').replace('img_', '');
-      $.getJSON($(this).attr('href'), {}, function (data) {
-        $('.image_fieldset').slideUp('slow'); // hide fieldsets
-        $('.video_fieldset').slideUp('slow'); // hide fieldsets
-        populateForm(data);
-        happyScroll('#NewMediaFormTop');
-        $('.new_media_fieldset').removeClass('collapsed').addClass('being_cloned');
-        // $('> div:not(.action)', $('.new_media_fieldset')).slideDown();
-        $('.input_image_name').focus();
-      });
-    });
-    // Delete Binding
-    $('.media_delete').click(function () {
-      $(this).parents('.dragable').addClass('being_deleted'); // add class to the gallery element being edited.
-      if (confirm('Are you sure that you want to delete this gallery item?')) {
-        // This has been confirmed. Go ahead and delete it.
-        $(this).parents('.dragable').fadeOut('slow', function () {
-          $(this).remove();
-        });
-        $.getJSON($(this).attr('href'), {}, function (data) {
-          set_cb_status(data);
-        });
-      } else {
-        // Don't delete anything!
-        $(this).parents('.dragable').removeClass('being_deleted'); // add class to the gallery element being edited.
-        set_cb_status({
-          message: 'Nothing was deleted. Whew! That was close, huh?',
-          message_class: 'status'
-        });
-      }
-    });
-  }
-
-  $('.form-radios input[value=video]').click(function () {
-    $('.image_fieldset').slideUp('slow', function () {
-      $('.video_fieldset').slideDown();
-    });
-
-  });
-
-  $('.form-radios input[value=image]').click(function () {
-    $('.video_fieldset').slideUp('slow', function () {
-      $('.image_fieldset').slideDown();
-    });
-  });
-  
-  
-  $('input').blur(function(){
-	front_end_validation();
-  });
-  front_end_validation();
-  refreshLivePreview(); // set default live-preview.
+	
+	
+	/*if(controls){
+		buttons.show()
+		$('#carousel').hover(function(){
+			buttons.show();
+		}).mouseleave(function(){
+			buttons.hide();
+		}).css({
+			height: (carousel_height+30)+'px',
+			width: (carousel_width)+'px'
+		});
+	}*/
+	if(!controls){
+		buttons.hide();
+	}
+	
+	/*if(width != '0'){
+		carousel.width(carousel_width);
+	}*/
+	
+	if(overlay_toggle){
+		overlay.hide();		
+		$('.videoContainer, video, object').focus(function(){
+			vid_focus = true;
+			$('.overlay').slideUp();
+			console.log('focus'+$(this).attr('class'));
+		}).blur(function(){
+			vid_focus = false;
+			console.log('blur');
+		});
+		
+		overview_item.bind("mouseenter", function(){
+			clearTimeout($(this).data('timeout'));
+			if(vid_focus == false){
+				$(this).find('.overlay').slideDown();
+			}
+		}).bind("mouseleave", function(){
+			var t = setTimeout(function() {
+			$(this).find('.overlay').slideUp();  
+		  }, 500);
+		  $(this).data('timeout', t); 
+		});
+		
+		overview_item.bind("mouseenter", function(){
+		if(!vid_focus){
+		  $(this).find('.overlay').slideDown();	
+		}
+		}).bind("mouseleave", function(){
+			$(this).find('.overlay').slideUp();  		 
+		});
+		
+		$('.item_video').click(function(){
+			$(this).find('.overlay').slideUp();
+		});
+		
+	}
+	
+	//-3 should be variable
+	$('#carousel object, .item_image, .item_video, .item_image img').width((Math.round(image_width))+'px');
+	$('.viewport').height(height);
+	//pager_list.find('li').width(Math.round((image_width/imgCount)-(display*2))+'px');
+	
+	//$('#carousel img').width((Math.round(outerWidth-3))+'px');
+		
+	if(display < imgCount){
+		carousel.tinycarousel({ 
+			start : 1,
+			display : (display),
+			axis : 'x',
+			controls : (controls),
+			pager : (pager),
+			interval : true,
+			intervalTime : (interval_time),
+			rewind : false,
+			animation : true,
+			duration : (duration),
+			callback : null,
+			singleSlide : (singleSlide),
+			pause: true
+		});
+	}
+	
+	if(typeof Shadowbox === 'function'){
+		Shadowbox.init({
+	        skipSetup: true
+	    });
+	    Shadowbox.setup();
+	}
+	
+	//console.log(singleSlide);
 });
+	

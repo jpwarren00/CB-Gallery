@@ -24,7 +24,6 @@ $args = array(
                'thumbnail' => FILTER_SANITIZE_URL,
                'embed_host' => FILTER_SANITIZE_SPECIAL_CHARS,
                );
-
 extract(filter_input_array(INPUT_GET, $args), EXTR_OVERWRITE);
 switch ($embed_host) {
   case "vimeo":
@@ -69,8 +68,8 @@ switch ($embed_host) {
   break;
   case 'VHS':
   case 'betamax':
-  case 'audio_cassette':
-   print "Good luck with that.";
+  case 'audio_cassette': 
+   print "Good luck with that.";    // JH - LOL 2012 04 20
   break;
   default:
     // Flash fallback

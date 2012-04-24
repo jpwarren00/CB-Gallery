@@ -1,219 +1,3 @@
-/*HTML Clearfix*/
-.clearfix:after {
-	content: ".";
-	display: block;
-	clear: both;
-	visibility: hidden;
-	line-height: 0;
-	height: 0;
-}
-.editing{
-  border:2px solid 
-}
-.clearfix {
-	display: inline-block;
-}
- 
-html[xmlns] .clearfix {
-	display: block;
-}
- 
-* html .clearfix {
-	height: 1%;
-}
-
-h3.gallery_title{
-  font-size: 1.8em;
-  font-family: "georgia", serif;
-  font-weight: bold;
-  margin-bottom: 7px;
-  color: steelBlue;
-}
-
-#node-form .reorder_gallery_fieldset .fieldset-wrapper{
-	overflow:hidden;
-}
-#ajax_loading{
-	color:lightblue;
-	font-size:40px;
-	position:absolute;
-	top:0;
-	left: 0;
-	height:100%;
-	width:100%;
-	text-align:center; /*the property text-align with value middle for the center horizontal align*/
-	display:none;
-	border:1px solid green;
-	/* Fallback for web browsers that doesn't support RGBa */
-	background: rgb(0, 0, 0) transparent;
-	/* RGBa with 0.6 opacity */
-	background: rgba(0, 0, 0, 0.6);
-	/* For IE 5.5 - 7*/
-	filter:progid:DXImageTransform.Microsoft.gradient(startColorstr=#99000000, endColorstr=#99000000);
-	/* For IE 8*/
-	-ms-filter: "progid:DXImageTransform.Microsoft.gradient(startColorstr=#99000000, endColorstr=#99000000)";
-}
-#ajax_loading img{
-	margin: 50% 0 0 0;
-	position: absolute;
-	width: auto !important;
-	height: auto !important;
-}
-#my_cb_gallery{
-  border:1px dashed #4D4D4D;
-  padding:5px;
-  position:relative;
-}
-.being_edited{
-  border:2px solid green !important;
-}
-.being_cloned{
-  border:2px solid #ffc000 !important;
-}
-#my_cb_gallery .dragable.being_deleted{
-  border:2px solid red;
-}
-
-#my_cb_gallery .dragable{
-  padding:3px;
-  background: url(../img/my_cb_gallery_bg.png) repeat-x top;
-  border:1px solid #ccc;
-  margin:3px;
-  height:62px;
-  cursor:move;
-  border-radius: 5px;
-  -webkit-border-radius: 5px;
-  -moz-border-radius: 5px;
-}
-
-#my_cb_gallery .inner_wrap{
-  float:left;
-  height: 40px;
-  overflow: hidden;
-  width: 70%;
-  background: url(../img/move_bg.png) no-repeat 3px 9px
-}
-
-#my_cb_gallery div p.media_caption{
-  margin:0 0 0 27px;
-  font: italic 1em "georgia", serif;
-}
-
-#my_cb_gallery div .media_menu{
-  color:brown;
-  width:80%;
-  float:left;
-  cursor: auto;
-}
-
-#my_cb_gallery h2{
-  margin-left: 30px;
-  font-family: "georgia", serif;
-}
-
-#my_cb_gallery .img_wrapper{
-  padding:0;
-  margin:0;
-  height:60px;
-  width:70px;
-  overflow: hidden;
-  border:1px solid #ccc;
-  float:right;
-  border-radius: 5px;
-  -webkit-border-radius: 5px;
-  -moz-border-radius: 5px;
-}
-#edit-thumbnail-width{
-	width:100px;
-}
-#edit-gallery-name{
-	width:400px;
-}
-#my_cb_gallery div img{
-	width: 100%;
-	height: auto;
-}
-#live_preview{
-	float: right;
-	height: 200px;
-	width: 154px;
-	margin: 0 0 0 0;
-	padding: 0 10px;
-}
-
-#live_preview #preview_wrapper{
-  padding: 4px;
-  width: 150px;
-}
-#live_preview #preview_wrapper li, #live_preview #preview_wrapper div{
-  border:1px solid #ccc;  
-}
-#live_preview #thumbport li {
-	background:none;
-}
-#live_preview h2{
-  margin:0px 0px 0px 7px;
-}
-#live_preview #thumbport ul{
-  margin:0;
-}
-#live_preview #viewport{
-  margin-bottom:2px;
-}
-
-#live_preview.noViewport #viewport{
-  display:none;
-}
-#live_preview.noThumbport #thumbport{
-  display:none;
-}
-
-/**
- *FourByThree 4:3 ratio
- */
-#live_preview.fourByThree #thumbport li{
-  padding:0;
-  height: 25px;
-  width: 33px;
-  float: left;
-  margin: 1px;
-}
-/**
- *sixteenByNine 16:9 ratio
- */
-#live_preview #viewport p{
-  margin: 0 auto;
-  padding: 10px 0 0 0;
-	text-align: center;
-}
-#live_preview #viewport {
-  height: 84px;
-}
-#live_preview.sixteenByNine #thumbport{
-  
-}
-#live_preview.sixteenByNine #thumbport li{
-  padding:0;
-  height: 18px;
-  width: 33px;
-  float: left;
-  margin: 1px;
-}
-/**
- *oneToOne 1:1 ratio
- */
-#live_preview.oneToOne #thumbport{
-  
-}
-#live_preview.oneToOne #thumbport li{
-  padding:0;
-  height: 33px;
-  width: 33px;
-  float: left;
-  margin: 1px;
-}
-
-
 /*LIVE STYLES*/
 /*These are meant to be overridden*/
 div.cb_gallery_node .viewport{
@@ -240,6 +24,123 @@ div.thumbport ul li img{
 div.thumbport ul li span{
   position: absolute;
   color: white;
-  font: bold italic 54px/67px Verdana, Arial;
+  font: bold 12/14px Verdana, Arial;
 
+}
+#carousel {
+    position: relative;
+}
+
+#carousel .viewport {
+    float: left;
+    overflow: hidden;
+    position: relative;
+    border-bottom: none;
+    border-top: none;
+    margin: 0 0 1px 0;
+    padding: 0;
+    height: 100%;
+    width:100%
+}
+
+#carousel li {
+    list-style: none;
+    background: none;
+    overflow: hidden;
+    position: relative;
+}
+
+#carousel .disable {
+    visibility: hidden;
+}
+
+#carousel .overview {
+    list-style: none;
+    position: absolute;
+    padding: 0;
+    margin: 0;
+    left: 0;
+    top: 0;
+}
+
+#carousel .overview li {
+    float: left;
+    padding: 0;
+    margin:0;
+    text-align: left;
+    background-image: none;
+}
+
+#carousel .viewport img {
+    margin: 0;
+    padding: 0;
+}
+
+#carousel .pager {
+    clear: both;
+}
+
+#carousel ul.pager {
+    height: 30px;
+    z-index: 3;
+    margin: 0;
+    padding: 0;
+}
+
+#carousel ul.pager li {
+    float: left;
+    background: none;
+    padding: 0;
+}
+
+#carousel .pager a {
+    font-size: 14px;
+    border: none !important;
+    cursor: pointer;
+}
+
+#carousel .pager a.last {
+    border-right: 1px solid #000;
+}
+
+#carousel a.buttons.prev {
+    display: block;
+    text-decoration: none;
+    width: 35px;
+    height: 25px;
+    cursor: pointer;
+    background: url(../img/prev-horizontal.png) no-repeat 10px 0;
+    border: none;
+    position: absolute;
+    top: 30%;
+    left: 0px;
+    margin: 30px 0 0 0;
+    z-index: 6;
+}
+
+#carousel a.buttons.next {
+    display: block;
+    text-decoration: none;
+    width: 35px;
+    height: 25px;
+    cursor: pointer;
+    background: url(../img/next-horizontal.png) no-repeat 0 0;
+    border: none;
+    position: absolute;
+    top: 30%;
+    right: 0px;
+    margin: 30px 0 0 0;
+    z-index: 6;
+}
+
+#carousel .overlay {
+    position: absolute;
+	width: 100%;
+    bottom: 0px;
+    left: 0px;
+    cursor: pointer;
+    z-index: 4;
+    background: url(../img/carousel_bg.png);
+    height: 25%;
+    padding: 10px 10px 0 10px;
 }

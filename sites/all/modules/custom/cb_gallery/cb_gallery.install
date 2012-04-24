@@ -74,6 +74,10 @@ function cb_gallery_schema() {
         'description' => 'The optional caption for this media.',
         'type' => 'text'
       ),
+      'media_transcript' => array(
+        'description' => 'The optional transcript for this media.',
+        'type' => 'text'
+      ),
       'thumbnail_path' => array(
         'description' => 'The offsite url / embed code / filepath of this media&39;s thumbnail.',
         'type' => 'varchar',

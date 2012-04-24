@@ -44,7 +44,8 @@ var oSelf;
         var oBtnPrev = $('.prev:first', root);
         var oPager = $('.pager:first', root);
         // video or swf focus
-        var oSwf = $('#carousel object, #carousel video, #carousel iframe', root);
+        var oSwf = $('.item_video', root).children();
+        
         var first = true;
         var iPageSize, iSteps, iStepWidth, iCurrent, leftPos, oTimer, bPause, bForward = true,
             bAxis = options.axis == 'x',
@@ -90,20 +91,25 @@ var oSelf;
             if (options.interval) {
                 root.hover(oSelf.stop, oSelf.start);
             }
-            if (options.pager && oPager.length > 0) {
+           // if (options.pager && oPager.length > 0) {
+            if (oPager.length > 0) {
                 $('a', oPager).click(setPager);
             }
             //if (options.pause) {
                 oSwf.focus(function () {
                     options.interval = false;
-                    console.log('test');
+                    //console.log('test');
                     oSelf.stop;
                     return false;
                 }).blur(function () {
                     options.interval = true;
                     oSelf.start;
+					oSwf.player.pause();
                     return false;
                 });
+               oSwf.click(function(){
+            	   $(this).focus();
+               });
             //}
         };
 
@@ -117,7 +123,6 @@ var oSelf;
         };
 
         function setPager(oEvent) {
-        	console.log('fffffuuuuuuu');
             if ($(this).hasClass('pagenum') && !oPager.hasClass('disabled') && this.rel != iCurrent) {
                 iDirection = parseInt(this.rel) - iCurrent;
                 oSelf.move(iDirection);
