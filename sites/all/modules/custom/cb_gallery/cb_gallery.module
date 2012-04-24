@@ -1071,9 +1071,16 @@ function cb_gallery_preprocess_node(&$variables) {
     $page_index = 1; // JH - JS is working off a 1 based index.
     $total_media = count($cb_gallery['media']);
     $carousel_settings['width'] = ($carousel_settings['width'] == 0 ? '100%' : ($carousel_settings['width'] / $carousel_2_settings['carousel_2']['display']));
-    list($thumbnail_aspect_ratio_x, $thumbnail_aspect_ratio_y) = split(':',$cb_gallery['gallery_info']['thumbnail_settings']['thumbnail_aspect_ratio']); 
-    //var_dump(($carousel_2_settings['carousel_2']['height'].'/'.$thumbnail_aspect_ratio_y) .'*'. $thumbnail_aspect_ratio_x);
+    $thumbnail_aspect_ratio = $cb_gallery['gallery_info']['thumbnail_settings']['thumbnail_aspect_ratio'];
+    if($thumbnail_aspect_ratio == 'auto' || $thumbnail_aspect_ratio = 'custom_height'){
+    	$thumbnail_aspect_ratio_x = '4';
+    	$thumbnail_aspect_ratio_y = '3';
+    } else {
+    	list($thumbnail_aspect_ratio_x, $thumbnail_aspect_ratio_y) = split(':', $thumbnail_aspect_ratio);
+    }
+     
     $calculated_width_from_ratio = ($carousel_2_settings['carousel_2']['height']/$thumbnail_aspect_ratio_y) * $thumbnail_aspect_ratio_x;
+    
     foreach ($cb_gallery['media'] as $media) {
       extract($media, EXTR_OVERWRITE); // Register ALL vars from {cb_gallery_children}.
       // Flickr Photo Preprocessing.
@@ -1189,7 +1196,7 @@ function cb_gallery_preprocess_node(&$variables) {
                   }
                 }
               }
-			  $shadowbox_trigger = ' rel="shadowbox[' . $variables['nid'] . '];height=;' . ($carousel_settings['width'] == '100%' ? '' : 'width=' . $carousel_settings['width']) . '"';
+			        $shadowbox_trigger = ' rel="shadowbox[' . $variables['nid'] . '];height=;' . ($carousel_settings['width'] == '100%' ? '' : 'width=' . $carousel_settings['width']) . '"';
               $opening_thumbnail_a_tag = '<a '. $shadowbox_trigger .' href="/' . drupal_get_path('module', 'cb_gallery') . '/include/player.php?embed_host=html5&thumbnail=' . $thumbnail_path . '&height=' . $carousel_2_settings['settings']['height'] . '&width=' . $carousel_settings['width'] . '&src=' . (is_array($video_formats) ? join(";", $video_formats) : $single_line) . '" onclick="return false;">';
             }
             break;
