@@ -1,0 +1,109 @@
+<?php
+/**
+ * @file
+ * This file is contains the schema used to create the nessisairy tables in the
+ * database for this module.
+ */
+function cb_gallery_schema() {
+  $schema = array();
+  // Gallery Names
+  $schema['cb_gallery_parents'] = array(
+    'description' => 'cb_gallery parents. ie. Gallery names.',
+    'fields' => array(
+      'nid' => array(
+        'description' => 'Unique ID',
+        'type' => 'int',
+        'not null' => TRUE,
+      ),
+      'media_feature_type' => array(
+        'description' => 'thumbnail, cb_gallery, or carousel',
+        'type' => 'varchar',
+        'length' => 10,
+        'not null' => TRUE,
+      ),
+      'display_title' => array(
+        'description' => 'Title to display with node.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => FALSE,
+      ),
+      'unique_css_block_class' => array(
+        'description' => 'CSS Class to put into the outermost div.',
+        'type' => 'text',
+      ),
+      'thumbnail_serialized_settings' => array(
+        'description' => 'Serialized PHP used to configure the Thumbnails.',
+        'type' => 'text',
+        'not null' => FALSE,
+      ),
+      'carousel_2_serialized_settings' => array(
+        'description' => 'Serialized PHP used to configure the Carousel.',
+        'type' => 'text',
+      ),
+    ),
+    'primary key' => array('nid')
+  );
+  // Media within the gallerys. Related by 'gallery_id.'
+  $schema['cb_gallery_children'] = array(
+    'description' => 'cb_gallery children.  ie. image/video names.',
+    'fields' => array(
+      'media_id' => array(
+        'description' => 'Unique ID',
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'nid' => array(
+        'description' => 'Foreign Key. Relates to cb_gallery_parent table.',
+        'type' => 'numeric',
+        'precision' => 10,
+        'scale' => '0', 
+        'not null' => TRUE,
+      ),
+      'media_name' => array(
+        'description' => 'The name of the image/video.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+      ),
+      'media_content' => array(
+        'description' => 'The offsite url / embed code / filepath of this media.',
+        'type' => 'text'
+      ),
+      'media_caption' => array(
+        'description' => 'The optional caption for this media.',
+        'type' => 'text'
+      ),
+      'media_transcript' => array(
+        'description' => 'The optional transcript for this media.',
+        'type' => 'text'
+      ),
+      'thumbnail_path' => array(
+        'description' => 'The offsite url / embed code / filepath of this media&39;s thumbnail.',
+        'type' => 'varchar',
+        'length' => 255,
+      ),
+      'media_type' => array(
+        'description' => 'The type of media this is expected to return. eg:[local_image],[remote_image],[video_embed]',
+        'type' => 'varchar',
+        'length' => 30,
+        'not null' => TRUE,
+      ),
+      'media_sort_order' => array(
+        'description' => 'The order in which the gallery items are displayed.',
+        'type' => 'numeric',
+        'precision' => 10,
+        'scale' => 0,
+      ),
+    ),
+    'primary key' => array('media_id')
+  ); 
+  return $schema;
+}
+function cb_gallery_install() {
+  drupal_install_schema('cb_gallery');
+}
+function cb_gallery_uninstall() {
+  drupal_uninstall_schema('cb_gallery');
+}
+//end of file

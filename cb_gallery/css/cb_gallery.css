@@ -1,0 +1,146 @@
+/*LIVE STYLES*/
+/*These are meant to be overridden*/
+div.cb_gallery_node .viewport{
+
+}
+
+div.thumbport ul {
+	padding: 0;
+	margin: 1px 0 0 0;
+}
+div.thumbport ul li{
+  padding:0;
+  margin:0;
+  float:left;
+  background:none;
+  overflow:hidden;
+}
+
+div.thumbport ul li img{
+  display: block;
+  float: left;
+}
+
+div.thumbport ul li span{
+  position: absolute;
+  color: white;
+  font: bold 12/14px Verdana, Arial;
+
+}
+#carousel {
+    position: relative;
+}
+
+#carousel .viewport {
+    float: left;
+    overflow: hidden;
+    position: relative;
+    border-bottom: none;
+    border-top: none;
+    margin: 0 0 1px 0;
+    padding: 0;
+    height: 100%;
+    width:100%
+}
+
+#carousel li {
+    list-style: none;
+    background: none;
+    overflow: hidden;
+    position: relative;
+}
+
+#carousel .disable {
+    visibility: hidden;
+}
+
+#carousel .overview {
+    list-style: none;
+    position: absolute;
+    padding: 0;
+    margin: 0;
+    left: 0;
+    top: 0;
+}
+
+#carousel .overview li {
+    float: left;
+    padding: 0;
+    margin:0;
+    text-align: left;
+    background-image: none;
+}
+
+#carousel .viewport img {
+    margin: 0;
+    padding: 0;
+}
+
+#carousel .pager {
+    clear: both;
+}
+
+#carousel ul.pager {
+    height: 30px;
+    z-index: 3;
+    margin: 0;
+    padding: 0;
+}
+
+#carousel ul.pager li {
+    float: left;
+    background: none;
+    padding: 0;
+}
+
+#carousel .pager a {
+    font-size: 14px;
+    border: none !important;
+    cursor: pointer;
+}
+
+#carousel .pager a.last {
+    border-right: 1px solid #000;
+}
+
+#carousel a.buttons.prev {
+    display: block;
+    text-decoration: none;
+    width: 35px;
+    height: 25px;
+    cursor: pointer;
+    background: url(../img/prev-horizontal.png) no-repeat 10px 0;
+    border: none;
+    position: absolute;
+    top: 30%;
+    left: 0px;
+    margin: 30px 0 0 0;
+    z-index: 6;
+}
+
+#carousel a.buttons.next {
+    display: block;
+    text-decoration: none;
+    width: 35px;
+    height: 25px;
+    cursor: pointer;
+    background: url(../img/next-horizontal.png) no-repeat 0 0;
+    border: none;
+    position: absolute;
+    top: 30%;
+    right: 0px;
+    margin: 30px 0 0 0;
+    z-index: 6;
+}
+
+#carousel .overlay {
+    position: absolute;
+	width: 100%;
+    bottom: 0px;
+    left: 0px;
+    cursor: pointer;
+    z-index: 4;
+    background: url(../img/carousel_bg.png);
+    height: 25%;
+    padding: 10px 10px 0 10px;
+}
