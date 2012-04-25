@@ -1,0 +1,4 @@
+name = HTML5 Video Tracking
+description = Simply adds the omniture library, and the tracking scripts that audo bind to all html5 video on your site!
+version = 1.x
+core = 6.x
