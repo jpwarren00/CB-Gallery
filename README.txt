@@ -1,7 +1,6 @@
-Josh Hoegen -
-Waddup mang.
-Go ahead and make a branch to work on.
-I have left some outstanding tasks in the .module file that you can help on.
+/**
+ * CB GALLERY - 4/25/2012
+ * Version: 6.x-2.x
+ */
+This is the Drupal 6 module that lets you use those sweet galleries the kids are up to these days.
 
-/* APRIL 6 2012 */
-Hacked by Josh
