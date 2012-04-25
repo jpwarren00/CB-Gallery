@@ -1013,14 +1013,14 @@ function _getSlidesFromFlickrFeed($carousel_2_settings = NULL) {
  * themeing layer.
  */
 function cb_gallery_preprocess_node(&$variables) {
-  // Add JS and CSS required to view this node.
-  drupal_add_css(drupal_get_path('module', 'cb_gallery') . '/css/cb_gallery.css', 'module'); // should not be the same CSS as the admin CSS.
-  drupal_add_js(drupal_get_path('module', 'cb_gallery') . '/js/jquery.tinycarousel.js', 'module');
-  drupal_add_js(drupal_get_path('module', 'cb_gallery') . '/js/cb_gallery.js', 'module'); // should not be the same JS as the admin JS.
-  // Set the template files to load the node template.
-  if ($variables['node']->cb_gallery) {
+  if ($variables['node']->type == 'cb_gallery') {
+    // Add JS and CSS required to view this node.
+    drupal_add_css(drupal_get_path('module', 'cb_gallery') . '/css/cb_gallery.css', 'module'); // should not be the same CSS as the admin CSS.
+    drupal_add_js(drupal_get_path('module', 'cb_gallery') . '/js/jquery.tinycarousel.js', 'module');
+    // Set the template files to load the node template.
+    drupal_add_js(drupal_get_path('module', 'cb_gallery') . '/js/cb_gallery.js', 'module'); // should not be the same JS as the admin JS.
     array_unshift($variables['template_files'], 'node-cb_gallery');
-  }
+  
   // Pull the gallery info data.
   $cb_gallery = _get_cb_gallery_info($variables['nid'], $single_new_item = NULL);
   // Set Defaults.
@@ -1052,7 +1052,7 @@ function cb_gallery_preprocess_node(&$variables) {
   );
   $pager_list_items = ''; // Will be replaced with LI's used for paging buttons.
   $carousel_settings = $cb_gallery['gallery_info']['carousel_settings'];
-  //dsm($carousel_settings);
+  
   $additionalCarousel_2vars = array(
     'start' => '1',
     'axis' => 'x',
@@ -1275,6 +1275,7 @@ function cb_gallery_preprocess_node(&$variables) {
   $variables['cb_gallery'] = $cb_gallery;
   $variables['cb_gallery']['viewport'] = (isset($carousel_slides) ? $viewport : NULL);
   $variables['cb_gallery']['thumbport'] = ((!isset($carousel_slides)) && (isset($thumbport_content)) ? $thumbport : NULL);
+}
 }
 /**
  * @function
