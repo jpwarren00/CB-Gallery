@@ -90,5 +90,6 @@
 <!-- /layout -->
 
   <?php print $closure ?>
+  
   </body>
 </html>

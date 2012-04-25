@@ -13,4 +13,5 @@
   // We exploit this here.
   drupal_add_js('/common.collegeboard.org/webanalytics/js/web_analytics_header.js');
   drupal_add_js(drupal_get_path('module','HTML5_video_tracking') . '/js/HTML5_video_tracking.js');
+  drupal_add_js('/common.collegeboard.org/webanalytics/js/web_analytics_footer.js');
  }
