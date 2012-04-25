@@ -20,7 +20,7 @@ function cb_gallery_menu() {
       3
     ), // Pass serial data as an argument.
     'access arguments' => array(
-      'access content js'
+      'create node'
     )
   );
   $items['admin/cb_gallery_ajax/change_sort_order/%'] = array(
@@ -30,17 +30,17 @@ function cb_gallery_menu() {
       3
     ), // Pass serial data as an argument.
     'access arguments' => array(
-      'access content js'
+      'create node'
     )
   );
   $items['admin/cb_gallery_ajax/%/delete_media'] = array(
     'page callback' => 'cb_gallery_ajax_delete_media',
     'type' => MENU_CALLBACK,
-    'page arguments' => array(
+    'create cb_gallery node' => array(
       2
     ), // Pass serial data as an argument.
     'access arguments' => array(
-      'access content js'
+      'create node'
     )
   );
   $items['admin/cb_gallery_ajax/%/edit_media'] = array(
@@ -50,7 +50,7 @@ function cb_gallery_menu() {
       2
     ), // Pass serial data as an argument.
     'access arguments' => array(
-      'access content js'
+      'create node'
     )
   );
   return $items;
@@ -1318,7 +1318,7 @@ function cb_gallery_block($op = 'list', $delta = 0, $edit = array()) {
             '!title' => $cb_gallery_node->title
           ));
           // Pass node to theme
-          $block['content'] = theme('cb_gallery_block', $cb_gallery_node);
+          $block['content'] = theme('node', $cb_gallery_node);
         }
       }
     }
@@ -1354,14 +1354,15 @@ function cb_gallery_node_info() {
   );
 }
 /**
+ * We have decided to kill hook
  * Implements hook_node_perm().
- */
 function cb_gallery_perm() {
   return array(
     'create cb_gallery node',
     'edit own cb_gallery'
   );
 }
+*/
 /**
  * Implements hook_help().
  */
