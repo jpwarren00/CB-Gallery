@@ -20,7 +20,7 @@ function cb_gallery_menu() {
       3
     ), // Pass serial data as an argument.
     'access arguments' => array(
-      'create node'
+      'create page content'
     )
   );
   $items['admin/cb_gallery_ajax/change_sort_order/%'] = array(
@@ -30,17 +30,17 @@ function cb_gallery_menu() {
       3
     ), // Pass serial data as an argument.
     'access arguments' => array(
-      'create node'
+      'create page content'
     )
   );
   $items['admin/cb_gallery_ajax/%/delete_media'] = array(
     'page callback' => 'cb_gallery_ajax_delete_media',
     'type' => MENU_CALLBACK,
-    'create cb_gallery node' => array(
+    'page arguments' => array(
       2
     ), // Pass serial data as an argument.
     'access arguments' => array(
-      'create node'
+      'create page content'
     )
   );
   $items['admin/cb_gallery_ajax/%/edit_media'] = array(
@@ -50,7 +50,7 @@ function cb_gallery_menu() {
       2
     ), // Pass serial data as an argument.
     'access arguments' => array(
-      'create node'
+      'create page content'
     )
   );
   return $items;
@@ -294,7 +294,7 @@ function _render_gallery_gui_elements($nid, $gallery_info = NULL, $single_new_it
       // so that the text will fit in the smallest possible area
       // allowed in the CSS.
       $media_name = (isset($row->media_name) ? truncate_utf8($row->media_name, 58, FALSE, TRUE) : '');
-      $media_caption = (!empty($row->media_caption) ? truncate_utf8($row->media_caption, 90, FALSE, TRUE) : 'No Caption');
+      $media_caption = (!empty($row->media_caption) ? truncate_utf8($row->media_caption, 40, FALSE, TRUE) : 'No Caption');
       // Here is the template for the sortable gallery images.
       // I did not see a reason to pass this to the themeing layer,
       // as it's look and feel is strictly administrative.
@@ -526,7 +526,7 @@ function cb_gallery_form($node, $form_state) {
       '16:9' => '16:9.',
       '1:1' => '1:1. (Square Grid)',
       'custom_height' => 'Custom Height',
-      'auto' => 'Do not constrain height. (Only use if all your images are already uniform size.)'
+      'auto' => 'Do not constrain height. (Only use if all your images are already uniform size, or you plan on using custom CSS.)'
     ), //TODO: Add "Custom" with new textfield for height.
     '#default_value' => (isset($gallery_info['gallery_info']['thumbnail_settings']['thumbnail_aspect_ratio']) ? $gallery_info['gallery_info']['thumbnail_settings']['thumbnail_aspect_ratio'] : '16:9'),
     '#description' => t('The aspect ratio of thumbnail images.'),
@@ -976,10 +976,6 @@ function _getSlidesFromFlickrFeed($carousel_2_settings = NULL) {
     $photo_url_l = $f->buildPhotoURL($photo, $size = "Medium 640");
     $photo_url_xl = $f->buildPhotoURL($photo, $size = "Large");
     list($img_actual_width, $img_actual_height) = getimagesize($photo_url_xl);
-    // JH - Effing idiot! do this math once outside the loop. Sorry to all
-    // JH - programmers everywhere.
-    // DS - I am not quite clear why we use the % here. 
-    // JH - It's modulus. 
     if ($carousel_2_settings['pager'] == 1) {
       if ($key % $carousel_2_settings['display'] == 0) {
         $page_count++;
