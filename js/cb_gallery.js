@@ -71,7 +71,6 @@ $(document).ready(function(){
      // per the instructions... Of they perhaps did not follow the
      // instructions, and instead, put "100px" or some other such foolishness
      // this will also ring true, and give the user an unexpected result...
-			console.log(overlay_y);
      if(typeof(overlay_y)=='string') {
        overlay.css({
          height: (overlay_height)+'px',
