@@ -98,11 +98,20 @@ $(document).ready(function(){
      if(!controls){
        buttons.hide();
      }
-     
-     /*if(width != '0'){
-       carousel.width(carousel_width);
-     }*/
-     
+		 
+			// Video presents a special case for the overlay.
+			// This block of logic judges what type of media is being shown,
+			// and toggles the overlay as needed.
+			var clickCount = -1; // Clicking play will inc this var.
+			$('.item_video').click(function(){
+         $(this).find('.overlay').fadeOut();
+				 clickCount++;
+      }).bind('mouseenter',function(){
+         $(this).find('.overlay').fadeOut();
+      }).bind('mouseleave',function(){
+				if(clickCount % 2) $(this).find('.overlay').fadeIn(); // Will be overridden by the play event.
+      });
+			
      if(overlay_toggle){
        overlay.hide();		
        $('.videoContainer, video, object').focus(function(){
@@ -134,9 +143,7 @@ $(document).ready(function(){
          $(this).find('.overlay').slideUp();  		 
        });
        
-       $('.item_video').click(function(){
-         $(this).find('.overlay').slideUp();
-       });
+       
        
      }
      

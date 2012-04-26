@@ -155,6 +155,8 @@ var oSelf;
             var iLt = (iSteps * options.display) - options.display;
             var iGt = (options.display - 1);
             var leftPos;
+            $('#carousel li').removeClass('visible_in_viewport');
+            $('#carousel li[rel="' + iTarget + '"]').addClass('visible_in_viewport');
             
             oBtnPrev.addClass('disabled');
             oBtnNext.addClass('disabled');
