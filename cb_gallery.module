@@ -1241,7 +1241,9 @@ function cb_gallery_preprocess_node(&$variables) {
         if (($img_index + 1) % $carousel_2_settings['carousel_2']['display'] == 0) {
           if ($carousel_2_settings['carousel_2']['move_amount'] != '1') {
             $thumbport_content .= '<li style="height:' . $cb_gallery['gallery_info']['thumbnail_height'] . 'px;">
+            <p style="display:none" class="image_display_name">'.$media_name.'</p>
 		            <a href="#" rel="' . $page_index . '" title="' . $media_caption . '" class="pagenum"><span>' . $page_index . '</span>' . $thumbport_content_image . '</a>
+                <p style="display:none" class="image_caption">'.$media_caption.'</p>
 		          </li>';
             //var_dump($thumbport_content);
           }
