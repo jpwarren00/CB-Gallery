@@ -47,7 +47,7 @@ $(document).ready(function(){
      var image_width = Math.round($('#carousel .viewport').outerWidth()/display);
          
      var overlay_height = parseInt(Drupal.settings.carousel_2.overlay_height);
-     var overlay_y = parseInt(Drupal.settings.carousel_2.overlay_y);
+     var overlay_y = Drupal.settings.carousel_2.overlay_y;
      var overlay_toggle = parseInt(Drupal.settings.carousel_2.overlay_toggle);
      var overlay_in;
      var overlay_out;
@@ -71,6 +71,7 @@ $(document).ready(function(){
      // per the instructions... Of they perhaps did not follow the
      // instructions, and instead, put "100px" or some other such foolishness
      // this will also ring true, and give the user an unexpected result...
+			console.log(overlay_y);
      if(typeof(overlay_y)=='string') {
        overlay.css({
          height: (overlay_height)+'px',
