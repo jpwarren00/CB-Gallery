@@ -1258,7 +1258,7 @@ function cb_gallery_preprocess_node(&$variables) {
   $thumbport = '<div class="thumbport pager"><ul class="' . ($pager_list_items ? 'pager' : '') . '">';
   $thumbport .= $thumbport_content;
   $thumbport .= '</ul></div>';
-  $viewport = '<div id="carousel" style="' . ($carousel_settings['width'] == '100%' ? '' : 'width:'. $carousel_2_settings['carousel_2']['width'] .'px') . '">';
+  $viewport = '<div id="carousel" class="clearfix" style="' . ($carousel_settings['width'] == '100%' ? '' : 'width:'. $carousel_2_settings['carousel_2']['width'] .'px') . '">';
   $viewport .= ($carousel_2_settings['carousel_2']['controls'] ? '<a class="buttons prev" href="#"></a>' : '');
   $viewport .= '<div class="viewport" style="height:' . $carousel_2_settings['carousel_2']['height'] . 'px">';
   $viewport .= '<ul class="overview">';

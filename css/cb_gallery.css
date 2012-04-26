@@ -1,5 +1,8 @@
 /*LIVE STYLES*/
 /*These are meant to be overridden*/
+.block-cb_gallery h2{
+	display:none;
+}
 div.cb_gallery_node .viewport{
 
 }

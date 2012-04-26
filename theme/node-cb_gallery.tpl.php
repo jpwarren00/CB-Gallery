@@ -10,9 +10,14 @@
 // This node.tpl file is a default display.
 // To edit the display, simply uncomment the following line to see the entire
 // structure of the cb_gallery that you can use for your own themes.
-//dsm($cb_gallery);
+
+// dsm($cb_gallery);
+
 ?>
 
+<?php if (user_access('administer nodes')) { ?>
+   		<a class="carousel-edit" href="node/<?php print $node->nid; ?>/edit">Edit</a>
+    <?php } ?>
 <?php if (isset($cb_gallery['gallery_info'])) : ?>
 <div class="cb_gallery_node <?php print $cb_gallery['gallery_info']['unique_css_block_class']; ?>">
 <?php if (!empty($cb_gallery['gallery_info']['display_title'])):?>
